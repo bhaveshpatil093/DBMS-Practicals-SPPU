@@ -1,3 +1,162 @@
+# Greedy Search Algorithm - Graph Path Finding
+
+import heapq
+
+class Graph:
+    def __init__(self):
+        self.edges = {}
+        self.heuristic = {}
+    
+    def add_edge(self, from_node, to_node, cost):
+        """Add an edge with cost between nodes"""
+        if from_node not in self.edges:
+            self.edges[from_node] = []
+        self.edges[from_node].append((to_node, cost))
+    
+    def set_heuristic(self, node, value):
+        """Set heuristic value (estimated distance to goal)"""
+        self.heuristic[node] = value
+    
+    def get_neighbors(self, node):
+        """Get all neighbors of a node"""
+        return self.edges.get(node, [])
+    
+    def get_heuristic(self, node):
+        """Get heuristic value for a node"""
+        return self.heuristic.get(node, float('inf'))
+
+
+def greedy_search(graph, start, goal):
+    """
+    Greedy Search Algorithm
+    Always expands the node that appears closest to goal (by heuristic)
+    """
+    # Priority queue: (heuristic_value, node, path, cost)
+    open_list = [(graph.get_heuristic(start), start, [start], 0)]
+    visited = set()
+    nodes_explored = 0
+    
+    print(f"Starting Greedy Search from {start} to {goal}\n")
+    
+    while open_list:
+        # Get node with minimum heuristic value
+        h_value, current, path, cost = heapq.heappop(open_list)
+        
+        nodes_explored += 1
+        print(f"Step {nodes_explored}: Exploring {current} (h={h_value}, cost={cost})")
+        
+        # Goal check
+        if current == goal:
+            print(f"\nGoal reached!")
+            print(f"Path: {' -> '.join(path)}")
+            print(f"Total cost: {cost}")
+            print(f"Nodes explored: {nodes_explored}")
+            return path, cost, nodes_explored
+        
+        # Mark as visited
+        if current in visited:
+            continue
+        visited.add(current)
+        
+        # Explore neighbors
+        for neighbor, edge_cost in graph.get_neighbors(current):
+            if neighbor not in visited:
+                new_path = path + [neighbor]
+                new_cost = cost + edge_cost
+                h = graph.get_heuristic(neighbor)
+                heapq.heappush(open_list, (h, neighbor, new_path, new_cost))
+                print(f"  -> Adding {neighbor} to queue (h={h})")
+        print()
+    
+    print("Goal not reachable!")
+    return None, float('inf'), nodes_explored
+
+
+# Example 1: Simple Graph
+def example_simple():
+    print("=" * 60)
+    print("EXAMPLE 1: Simple Path Finding")
+    print("=" * 60 + "\n")
+    
+    g = Graph()
+    
+    # Add edges (from, to, cost)
+    g.add_edge('A', 'B', 1)
+    g.add_edge('A', 'C', 4)
+    g.add_edge('B', 'D', 3)
+    g.add_edge('B', 'E', 7)
+    g.add_edge('C', 'F', 5)
+    g.add_edge('D', 'G', 2)
+    g.add_edge('E', 'G', 3)
+    g.add_edge('F', 'G', 1)
+    
+    # Set heuristic values (estimated distance to goal G)
+    g.set_heuristic('A', 7)
+    g.set_heuristic('B', 6)
+    g.set_heuristic('C', 4)
+    g.set_heuristic('D', 3)
+    g.set_heuristic('E', 3)
+    g.set_heuristic('F', 1)
+    g.set_heuristic('G', 0)
+    
+    path, cost, nodes = greedy_search(g, 'A', 'G')
+    print("\n" + "=" * 60 + "\n")
+
+
+# Example 2: Romania Map Problem
+def example_romania():
+    print("=" * 60)
+    print("EXAMPLE 2: Romania Map (Arad to Bucharest)")
+    print("=" * 60 + "\n")
+    
+    g = Graph()
+    
+    # Add edges (bidirectional)
+    edges = [
+        ('Arad', 'Zerind', 75),
+        ('Arad', 'Sibiu', 140),
+        ('Arad', 'Timisoara', 118),
+        ('Zerind', 'Oradea', 71),
+        ('Oradea', 'Sibiu', 151),
+        ('Timisoara', 'Lugoj', 111),
+        ('Lugoj', 'Mehadia', 70),
+        ('Mehadia', 'Drobeta', 75),
+        ('Drobeta', 'Craiova', 120),
+        ('Sibiu', 'Fagaras', 99),
+        ('Sibiu', 'Rimnicu', 80),
+        ('Rimnicu', 'Craiova', 146),
+        ('Rimnicu', 'Pitesti', 97),
+        ('Fagaras', 'Bucharest', 211),
+        ('Craiova', 'Pitesti', 138),
+        ('Pitesti', 'Bucharest', 101),
+    ]
+    
+    for u, v, cost in edges:
+        g.add_edge(u, v, cost)
+        g.add_edge(v, u, cost)
+    
+    # Straight-line distance heuristic to Bucharest
+    heuristics = {
+        'Arad': 366, 'Bucharest': 0, 'Craiova': 160, 'Drobeta': 242,
+        'Fagaras': 176, 'Lugoj': 244, 'Mehadia': 241, 'Oradea': 380,
+        'Pitesti': 100, 'Rimnicu': 193, 'Sibiu': 253, 'Timisoara': 329,
+        'Zerind': 374
+    }
+    
+    for node, h in heuristics.items():
+        g.set_heuristic(node, h)
+    
+    path, cost, nodes = greedy_search(g, 'Arad', 'Bucharest')
+    print("\n" + "=" * 60 + "\n")
+
+
+# Main execution
+if __name__ == "__main__":
+    example_simple()
+    example_romania()
+
+########################################################################################################################################
+
 # Greedy Search Algorithm
 ## Detailed Explanation
 
