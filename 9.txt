@@ -1,0 +1,312 @@
+Program:
+
+# N-Queens Problem - Backtracking and Branch & Bound
+
+def is_safe(board, row, col, n):
+    """Check if queen can be placed at board[row][col]"""
+    # Check column
+    for i in range(row):
+        if board[i][col] == 1:
+            return False
+    
+    # Check upper left diagonal
+    i, j = row - 1, col - 1
+    while i >= 0 and j >= 0:
+        if board[i][j] == 1:
+            return False
+        i -= 1
+        j -= 1
+    
+    # Check upper right diagonal
+    i, j = row - 1, col + 1
+    while i >= 0 and j < n:
+        if board[i][j] == 1:
+            return False
+        i -= 1
+        j += 1
+    
+    return True
+
+
+def solve_backtracking(board, row, n, steps):
+    """Solve N-Queens using Backtracking"""
+    if row >= n:
+        return True, steps
+    
+    for col in range(n):
+        steps[0] += 1
+        if is_safe(board, row, col, n):
+            board[row][col] = 1
+            solved, steps = solve_backtracking(board, row + 1, n, steps)
+            if solved:
+                return True, steps
+            board[row][col] = 0  # Backtrack
+    
+    return False, steps
+
+
+def count_conflicts(board, row, col, n):
+    """Count number of conflicts for placing queen at (row, col)"""
+    conflicts = 0
+    for i in range(row):
+        if board[i][col] == 1:
+            conflicts += 1
+        if col - (row - i) >= 0 and board[i][col - (row - i)] == 1:
+            conflicts += 1
+        if col + (row - i) < n and board[i][col + (row - i)] == 1:
+            conflicts += 1
+    return conflicts
+
+
+def solve_branch_bound(board, row, n, steps):
+    """Solve N-Queens using Branch and Bound"""
+    if row >= n:
+        return True, steps
+    
+    # Create list of columns sorted by conflicts (heuristic)
+    columns = list(range(n))
+    columns.sort(key=lambda c: count_conflicts(board, row, c, n))
+    
+    for col in columns:
+        steps[0] += 1
+        if is_safe(board, row, col, n):
+            board[row][col] = 1
+            solved, steps = solve_branch_bound(board, row + 1, n, steps)
+            if solved:
+                return True, steps
+            board[row][col] = 0  # Backtrack
+    
+    return False, steps
+
+
+def print_board(board, n):
+    """Print the board"""
+    for i in range(n):
+        for j in range(n):
+            print('Q' if board[i][j] == 1 else '.', end=' ')
+        print()
+
+
+# Main execution
+if __name__ == "__main__":
+    n = 4  # Board size
+    
+    # Solve using Backtracking
+    print("=== BACKTRACKING ===")
+    board1 = [[0] * n for _ in range(n)]
+    steps1 = [0]
+    solved, steps1 = solve_backtracking(board1, 0, n, steps1)
+    if solved:
+        print_board(board1, n)
+        print(f"Steps: {steps1[0]}\n")
+    
+    # Solve using Branch and Bound
+    print("=== BRANCH AND BOUND ===")
+    board2 = [[0] * n for _ in range(n)]
+    steps2 = [0]
+    solved, steps2 = solve_branch_bound(board2, 0, n, steps2)
+    if solved:
+        print_board(board2, n)
+        print(f"Steps: {steps2[0]}")
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Explanation:
+
+# N-Queens Problem - Constraint Satisfaction Problem (CSP)
+## Detailed Explanation
+
+---
+
+## Problem Definition
+
+The N-Queens problem asks: **Place N chess queens on an N×N chessboard such that no two queens attack each other.**
+
+**Constraints:**
+- No two queens can be in the same row
+- No two queens can be in the same column
+- No two queens can be on the same diagonal
+
+This is a classic **Constraint Satisfaction Problem (CSP)** where we must find an assignment of values (queen positions) to variables (rows) that satisfies all constraints.
+
+---
+
+## Approach 1: Backtracking Algorithm
+
+### Concept
+Backtracking is a systematic way to explore all possible configurations by building solutions incrementally and abandoning (backtracking) when constraints are violated.
+
+### How It Works
+
+1. Start at row 0, try to place a queen in each column
+2. Check constraints: For each column, check if placing a queen is safe
+3. If safe: Place the queen and recursively solve for the next row
+4. If successful: Solution found, return
+5. If stuck: Remove the queen (backtrack) and try the next column
+6. Repeat until a solution is found or all possibilities are exhausted
+
+### Algorithm Steps
+
+```
+Function BACKTRACK(row):
+    IF row == N:
+        RETURN success (all queens placed)
+    
+    FOR each column in row:
+        IF position is safe:
+            Place queen at (row, column)
+            result = BACKTRACK(row + 1)
+            
+            IF result is success:
+                RETURN success
+            
+            Remove queen (BACKTRACK)
+    
+    RETURN failure
+```
+
+### Safety Check
+A position (row, col) is safe if no queen exists in:
+- Same column in previous rows
+- Upper-left diagonal
+- Upper-right diagonal
+
+### Time Complexity
+- Worst case: O(N!)
+- Explores all possible placements systematically
+
+---
+
+## Approach 2: Branch and Bound Algorithm
+
+### Concept
+Branch and Bound improves upon backtracking by using **heuristics** and **bounding functions** to prune the search space. It avoids exploring branches that cannot lead to better solutions.
+
+### How It Works
+
+1. Similar to backtracking, but with intelligent ordering
+2. Heuristic: Before trying columns, evaluate which has the minimum conflicts
+3. Ordering: Try columns with fewer conflicts first (Most Constrained Variable)
+4. Pruning: Skip branches that are guaranteed to fail
+5. Bound function: Estimate the "cost" of partial solutions
+
+### Key Difference from Backtracking
+
+Backtracking: Tries columns in order 0, 1, 2, 3, ...
+
+Branch & Bound: Sorts columns by conflict count, tries best options first
+- Column with 0 conflicts → try first
+- Column with 2 conflicts → try last
+
+### Algorithm Steps
+
+```
+Function BRANCH_BOUND(row):
+    IF row == N:
+        RETURN success
+    
+    columns = [0, 1, 2, ..., N-1]
+    SORT columns by conflict count (ascending)
+    
+    FOR each column in sorted order:
+        IF position is safe:
+            Place queen at (row, column)
+            result = BRANCH_BOUND(row + 1)
+            
+            IF result is success:
+                RETURN success
+            
+            Remove queen (BACKTRACK)
+    
+    RETURN failure
+```
+
+### Bounding Function
+The `count_conflicts()` function acts as a lower bound estimator:
+- Counts how many queens in previous rows would conflict with placement
+- Guides search toward more promising branches
+
+### Time Complexity
+- Worst case: O(N!) (same as backtracking)
+- Average case: Much better due to intelligent pruning
+- Typically explores fewer nodes than pure backtracking
+
+---
+
+## Comparison Table
+
+| Feature | Backtracking | Branch & Bound |
+|---------|-------------|----------------|
+| Strategy | Brute force exploration | Intelligent exploration |
+| Ordering | Fixed (left to right) | Heuristic-based |
+| Pruning | None | Conflict-based |
+| Steps | More | Fewer (usually) |
+| Memory | O(N) | O(N) |
+| Implementation | Simpler | Slightly complex |
+
+---
+
+## Constraint Checking Details
+
+### Column Check
+```
+For row i from 0 to current_row-1:
+    If board[i][col] has queen:
+        CONFLICT
+```
+
+### Diagonal Check (Upper-Left)
+```
+Check positions: (row-1, col-1), (row-2, col-2), ...
+Stop when out of bounds
+```
+
+### Diagonal Check (Upper-Right)
+```
+Check positions: (row-1, col+1), (row-2, col+2), ...
+Stop when out of bounds
+```
+
+---
+
+## Example Execution (N=4)
+
+**Backtracking might try:**
+- Row 0: Try col 0 → Place queen
+- Row 1: Try col 0 (unsafe), col 1 (unsafe), col 2 → Place queen
+- Row 2: All unsafe → BACKTRACK to row 1
+- Row 1: Try col 3 → Place queen
+- Continue...
+
+**Branch & Bound might try:**
+- Row 0: Try col 0 → Place queen
+- Row 1: Calculate conflicts for all columns → [2, 1, 1, 2]
+- Try col 1 first (min conflicts) → Place queen
+- This leads to a faster solution!
+
+---
+
+## Key Concepts
+
+1. State Space Tree: Both algorithms explore a tree where each node represents a partial solution
+2. Constraint Propagation: Each queen placement reduces available options for future rows
+3. Backtracking: The mechanism to undo decisions when stuck
+4. Heuristic: Branch & Bound uses "minimum conflicts" to guide search
+5. Pruning: Avoiding the exploration of branches that cannot succeed
+
+---
+
+## Applications of CSP
+
+- Scheduling problems
+- Resource allocation
+- Map coloring
+- Sudoku solving
+- Circuit design
+- Timetable generation
+
+---
+
+## Conclusion
+
+Both algorithms solve the N-Queens problem by systematically exploring possibilities while respecting constraints. Backtracking is simpler and guarantees finding a solution if one exists. Branch and Bound adds intelligence through heuristics, typically finding solutions faster by exploring fewer branches.
