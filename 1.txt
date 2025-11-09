@@ -1,0 +1,173 @@
+Program:
+
+-- ============================================
+-- SQL PRACTICAL: LIBRARY MANAGEMENT (MySQL)
+-- Works on: MySQL, MariaDB, phpMyAdmin
+-- ============================================
+
+-- 1. CREATE TABLES (AUTO_INCREMENT replaces SEQUENCE)
+
+CREATE TABLE Members (
+    member_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    join_date DATE DEFAULT (CURRENT_DATE),
+    phone VARCHAR(15) CHECK (LENGTH(phone) = 10)
+);
+
+CREATE TABLE Books (
+    book_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    author VARCHAR(50),
+    price DECIMAL(6,2) CHECK (price > 0),
+    stock INT DEFAULT 0,
+    CONSTRAINT chk_stock CHECK (stock >= 0)
+);
+
+CREATE TABLE Issued_Books (
+    issue_id INT AUTO_INCREMENT PRIMARY KEY,
+    book_id INT,
+    member_id INT,
+    issue_date DATE DEFAULT (CURRENT_DATE),
+    return_date DATE,
+    FOREIGN KEY (book_id) REFERENCES Books(book_id) ON DELETE CASCADE,
+    FOREIGN KEY (member_id) REFERENCES Members(member_id)
+);
+
+-- 2. CREATE INDEX
+CREATE INDEX idx_book_title ON Books(title);
+CREATE INDEX idx_member_email ON Members(email);
+
+-- 3. CREATE VIEW
+CREATE VIEW Available_Books AS
+SELECT book_id, title, author, stock
+FROM Books
+WHERE stock > 0;
+
+-- NOTE: MySQL doesn't support SYNONYM, so we skip it
+
+-- ============================================
+-- DML QUERIES
+-- ============================================
+
+-- INSERT Data
+INSERT INTO Members (name, email, phone) VALUES 
+('Alice Smith', 'alice@email.com', '9876543210'),
+('Bob Johnson', 'bob@email.com', '8765432109'),
+('Carol White', 'carol@email.com', '7654321098');
+
+INSERT INTO Books (title, author, price, stock) VALUES 
+('Database Systems', 'Ramez Elmasri', 450.00, 5),
+('Java Programming', 'Herbert Schildt', 550.00, 3),
+('Python Basics', 'Mark Lutz', 400.00, 0),
+('Web Development', 'Jon Duckett', 500.00, 4);
+
+INSERT INTO Issued_Books (book_id, member_id) VALUES (1, 1), (2, 2);
+
+-- QUERY 1: SELECT with WHERE
+SELECT * FROM Books WHERE stock > 2;
+
+-- QUERY 2: JOIN Query
+SELECT m.name, b.title, i.issue_date
+FROM Members m
+JOIN Issued_Books i ON m.member_id = i.member_id
+JOIN Books b ON i.book_id = b.book_id
+WHERE i.return_date IS NULL;
+
+-- QUERY 3: UPDATE
+UPDATE Books SET stock = stock - 1 WHERE book_id = 1;
+
+-- QUERY 4: UPDATE with condition
+UPDATE Issued_Books SET return_date = CURDATE() WHERE issue_id = 1;
+
+-- QUERY 5: DELETE
+DELETE FROM Members WHERE member_id = 3;
+
+-- QUERY 6: Aggregate Functions
+SELECT COUNT(*) AS total_books, AVG(price) AS avg_price FROM Books;
+
+-- QUERY 7: GROUP BY with HAVING
+SELECT author, COUNT(*) AS book_count
+FROM Books
+GROUP BY author
+HAVING COUNT(*) >= 1;
+
+-- QUERY 8: Subquery
+SELECT title FROM Books
+WHERE book_id IN (SELECT book_id FROM Issued_Books WHERE return_date IS NULL);
+
+-- QUERY 9: ORDER BY
+SELECT * FROM Books ORDER BY price DESC;
+
+-- QUERY 10: Using VIEW
+SELECT * FROM Available_Books;
+
+-- QUERY 11: LIKE operator
+SELECT * FROM Books WHERE title LIKE '%Java%';
+
+-- QUERY 12: BETWEEN operator
+SELECT * FROM Books WHERE price BETWEEN 400 AND 500;
+
+-- QUERY 13: IN operator
+SELECT * FROM Members WHERE member_id IN (1, 2);
+
+-- QUERY 14: COUNT per member
+SELECT m.name, COUNT(i.issue_id) AS books_issued
+FROM Members m
+LEFT JOIN Issued_Books i ON m.member_id = i.member_id
+GROUP BY m.name;
+
+*/
+
+Explanation:
+
+I've created a comprehensive SQL practical for you! Here's a **single-page explanation** to help you present this:
+
+---
+
+## **SQL Practical Explanation - Library Management System**
+
+### **Purpose**
+This practical demonstrates core SQL concepts using a Library Management database with three related tables: Members, Books, and Issued_Books.
+
+### **SQL Objects Covered:**
+
+**1. SEQUENCE** - Auto-generates unique IDs for books and members, eliminating manual ID assignment.
+
+**2. TABLES** - Three interconnected tables store library data with proper relationships.
+
+**3. CONSTRAINTS Demonstrated:**
+   - **PRIMARY KEY**: Uniquely identifies each record
+   - **FOREIGN KEY**: Links Issued_Books to Books and Members (with CASCADE delete)
+   - **NOT NULL**: Ensures essential fields have values
+   - **UNIQUE**: Prevents duplicate emails
+   - **CHECK**: Validates phone length and ensures positive prices/stock
+   - **DEFAULT**: Auto-fills dates and initial stock values
+
+**4. INDEX** - Created on frequently searched columns (title, email) to speed up queries.
+
+**5. VIEW** - Virtual table showing only available books (stock > 0), simplifying queries.
+
+**6. SYNONYM** - Creates alias "Mems" for Members table, providing shorter notation.
+
+### **10+ DML Queries Explained:**
+
+1-3. **INSERT**: Add members, books, and track issued books using sequences
+4. **SELECT with WHERE**: Filter books with sufficient stock
+5. **JOIN**: Combine three tables to show who borrowed which books
+6-7. **UPDATE**: Decrease stock when issuing books, record return dates
+8. **DELETE**: Remove members from database
+9. **Aggregates**: Calculate total books and average price
+10. **GROUP BY/HAVING**: Count books per author
+11. **Subquery**: Find currently issued books
+12. **ORDER BY**: Sort books by price
+13-14. **View/Synonym usage**: Query using created objects
+15. **LIKE**: Pattern matching for book titles
+
+### **Key Concepts:**
+- **DDL** (Data Definition Language): CREATE, DROP statements
+- **DML** (Data Manipulation Language): INSERT, UPDATE, DELETE, SELECT
+- **Referential Integrity**: Foreign keys maintain data consistency
+- **Data Validation**: Constraints ensure data quality
+
+This system shows real-world database design with proper normalization and relationships!
