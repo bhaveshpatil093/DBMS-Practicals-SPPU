@@ -1,0 +1,304 @@
+Program:
+
+-- ============================================
+-- SQL PRACTICAL: E-COMMERCE SYSTEM
+-- Demonstrates: All Joins, Sub-Queries, Views
+-- ============================================
+
+-- CREATE TABLES
+CREATE TABLE Customers (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    email VARCHAR(100),
+    city VARCHAR(50)
+);
+
+CREATE TABLE Products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_name VARCHAR(100) NOT NULL,
+    category VARCHAR(50),
+    price DECIMAL(8,2)
+);
+
+CREATE TABLE Orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT,
+    order_date DATE,
+    total_amount DECIMAL(10,2),
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+);
+
+CREATE TABLE Order_Items (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT,
+    product_id INT,
+    quantity INT,
+    FOREIGN KEY (order_id) REFERENCES Orders(order_id),
+    FOREIGN KEY (product_id) REFERENCES Products(product_id)
+);
+
+-- INSERT SAMPLE DATA
+INSERT INTO Customers (name, email, city) VALUES
+('John Doe', 'john@email.com', 'Mumbai'),
+('Jane Smith', 'jane@email.com', 'Delhi'),
+('Bob Wilson', 'bob@email.com', 'Mumbai'),
+('Alice Brown', 'alice@email.com', 'Pune'),
+('Charlie Davis', 'charlie@email.com', NULL);
+
+INSERT INTO Products (product_name, category, price) VALUES
+('Laptop', 'Electronics', 45000),
+('Mouse', 'Electronics', 500),
+('Desk', 'Furniture', 8000),
+('Chair', 'Furniture', 3000),
+('Keyboard', 'Electronics', 1500);
+
+INSERT INTO Orders (customer_id, order_date, total_amount) VALUES
+(1, '2024-10-01', 46500),
+(2, '2024-10-05', 11000),
+(3, '2024-10-10', 500),
+(1, '2024-10-15', 3000);
+
+INSERT INTO Order_Items (order_id, product_id, quantity) VALUES
+(1, 1, 1), (1, 2, 3),
+(2, 3, 1), (2, 4, 1),
+(3, 2, 1),
+(4, 4, 1);
+
+-- ============================================
+-- QUERY 1: INNER JOIN (Customers with Orders)
+-- ============================================
+SELECT c.name, o.order_id, o.order_date, o.total_amount
+FROM Customers c
+INNER JOIN Orders o ON c.customer_id = o.customer_id;
+
+-- ============================================
+-- QUERY 2: LEFT JOIN (All Customers + Orders)
+-- ============================================
+SELECT c.name, c.city, o.order_id, o.total_amount
+FROM Customers c
+LEFT JOIN Orders o ON c.customer_id = o.customer_id;
+
+-- ============================================
+-- QUERY 3: RIGHT JOIN (All Orders + Customers)
+-- ============================================
+SELECT c.name, o.order_id, o.order_date
+FROM Customers c
+RIGHT JOIN Orders o ON c.customer_id = o.customer_id;
+
+-- ============================================
+-- QUERY 4: FULL OUTER JOIN (All Customers & Orders)
+-- MySQL doesn't support FULL JOIN, using UNION
+-- ============================================
+SELECT c.name, o.order_id, o.total_amount
+FROM Customers c
+LEFT JOIN Orders o ON c.customer_id = o.customer_id
+UNION
+SELECT c.name, o.order_id, o.total_amount
+FROM Customers c
+RIGHT JOIN Orders o ON c.customer_id = o.customer_id;
+
+-- ============================================
+-- QUERY 5: SELF JOIN (Customers from Same City)
+-- ============================================
+SELECT c1.name AS Customer1, c2.name AS Customer2, c1.city
+FROM Customers c1
+INNER JOIN Customers c2 ON c1.city = c2.city
+WHERE c1.customer_id < c2.customer_id;
+
+-- ============================================
+-- QUERY 6: MULTIPLE JOINS (4 Tables)
+-- ============================================
+SELECT c.name, o.order_id, p.product_name, oi.quantity
+FROM Customers c
+JOIN Orders o ON c.customer_id = o.customer_id
+JOIN Order_Items oi ON o.order_id = oi.order_id
+JOIN Products p ON oi.product_id = p.product_id;
+
+-- ============================================
+-- QUERY 7: SUB-QUERY (WHERE Clause)
+-- Find customers who placed orders above average
+-- ============================================
+SELECT name, email
+FROM Customers
+WHERE customer_id IN (
+    SELECT customer_id FROM Orders 
+    WHERE total_amount > (SELECT AVG(total_amount) FROM Orders)
+);
+
+-- ============================================
+-- QUERY 8: SUB-QUERY (FROM Clause - Inline View)
+-- ============================================
+SELECT customer_summary.name, customer_summary.total_spent
+FROM (
+    SELECT c.name, SUM(o.total_amount) AS total_spent
+    FROM Customers c
+    JOIN Orders o ON c.customer_id = o.customer_id
+    GROUP BY c.name
+) AS customer_summary
+WHERE customer_summary.total_spent > 10000;
+
+-- ============================================
+-- QUERY 9: CORRELATED SUB-QUERY
+-- Products more expensive than category average
+-- ============================================
+SELECT product_name, category, price
+FROM Products p1
+WHERE price > (
+    SELECT AVG(price) 
+    FROM Products p2 
+    WHERE p2.category = p1.category
+);
+
+-- ============================================
+-- QUERY 10: SUB-QUERY with EXISTS
+-- Customers who have placed orders
+-- ============================================
+SELECT name, city
+FROM Customers c
+WHERE EXISTS (
+    SELECT 1 FROM Orders o WHERE o.customer_id = c.customer_id
+);
+
+-- ============================================
+-- QUERY 11: SUB-QUERY with NOT EXISTS
+-- Customers who never ordered
+-- ============================================
+SELECT name, email
+FROM Customers c
+WHERE NOT EXISTS (
+    SELECT 1 FROM Orders o WHERE o.customer_id = c.customer_id
+);
+
+-- ============================================
+-- QUERY 12: CREATE VIEW (Customer Order Summary)
+-- ============================================
+CREATE VIEW Customer_Order_Summary AS
+SELECT c.customer_id, c.name, 
+       COUNT(o.order_id) AS total_orders,
+       COALESCE(SUM(o.total_amount), 0) AS total_spent
+FROM Customers c
+LEFT JOIN Orders o ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.name;
+
+-- Query the View
+SELECT * FROM Customer_Order_Summary;
+
+-- ============================================
+-- QUERY 13: CREATE VIEW (Product Sales)
+-- ============================================
+CREATE VIEW Product_Sales AS
+SELECT p.product_name, p.category, 
+       SUM(oi.quantity) AS total_sold,
+       SUM(oi.quantity * p.price) AS revenue
+FROM Products p
+JOIN Order_Items oi ON p.product_id = oi.product_id
+GROUP BY p.product_name, p.category;
+
+-- Query the View
+SELECT * FROM Product_Sales ORDER BY revenue DESC;
+
+-- ============================================
+-- QUERY 14: SUB-QUERY with ANY/ALL
+-- Products cheaper than ANY Electronics item
+-- ============================================
+SELECT product_name, price
+FROM Products
+WHERE price < ANY (
+    SELECT price FROM Products WHERE category = 'Electronics'
+);
+
+-- ============================================
+-- QUERY 15: CROSS JOIN (Cartesian Product)
+-- All possible Customer-Product combinations
+-- ============================================
+SELECT c.name, p.product_name
+FROM Customers c
+CROSS JOIN Products p
+LIMIT 10;
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Explanation:
+
+SQL Practical Explanation - Joins, Sub-Queries & Views
+Database: E-Commerce System
+Four related tables: Customers, Products, Orders, Order_Items
+
+ALL TYPES OF JOINS DEMONSTRATED:
+
+1. INNER JOIN (Query 1)
+Returns only matching records from both tables
+Example: Shows customers who have placed orders
+
+2. LEFT JOIN (Query 2)
+Returns all records from the left table + matching from the right
+Example: All customers, including those without orders
+
+3. RIGHT JOIN (Query 3)
+Returns all records from the right table + matching from the left
+Example: All orders with customer details
+
+4. FULL OUTER JOIN (Query 4)
+Returns all records from both tables (matched + unmatched)
+MySQL uses a UNION of LEFT and RIGHT joins
+
+5. SELF JOIN (Query 5)
+Table joined with itself
+Example: Find customers from the same city
+
+6. CROSS JOIN (Query 15)
+Cartesian product - every row from table1 with every row from table2
+Example: All possible customer-product combinations
+
+7. MULTIPLE JOINS (Query 6)
+Joins 4 tables together
+Shows complete order details with customer and product names
+
+
+SUB-QUERY TYPES DEMONSTRATED:
+
+1. Sub-Query in WHERE Clause (Query 7)
+Find customers with orders above the average amount
+Inner query calculates the average first
+
+2. Sub-Query in FROM Clause (Query 8)
+Also called "Inline View" or "Derived Table"
+Creates a temporary result set used in the outer query
+
+3. Correlated Sub-Query (Query 9)
+Inner query references outer query
+Executes once for each row of the outer query
+Example: Products more expensive than their category average
+
+4. EXISTS Sub-Query (Query 10)
+Checks if the sub-query returns any rows
+More efficient than IN for large datasets
+Example: Customers who have orders
+
+5. NOT EXISTS Sub-Query (Query 11)
+Opposite of EXISTS
+Example: Customers who never ordered
+
+6. ANY/ALL Sub-Query (Query 14)
+Compares value with sub-query results
+ANY: true if the condition matches any value
+ALL: true if condition matches all values
+
+
+VIEWS EXPLAINED:
+View = Virtual Table (saved query)
+
+Query 12: Customer_Order_Summary View
+Summarizes total orders and spending per customer
+Simplifies complex aggregation queries
+
+Query 13: Product_Sales View
+Shows product sales performance
+Easy reporting without writing complex joins
+
+Benefits of Views:
+
+Simplify complex queries
+Security (hide sensitive columns)
+Reusability
+Data abstraction
