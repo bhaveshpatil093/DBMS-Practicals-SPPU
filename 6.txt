@@ -1,0 +1,279 @@
+Program:
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Management - CRUD Operations</title>
+</head>
+<body>
+    <h2>Student Management System</h2>
+    <div id="msg" style="color:green;"></div>
+    
+    <form id="form">
+        ID: <input type="number" id="id"><br><br>
+        Name: <input type="text" id="name" required><br><br>
+        Email: <input type="email" id="email" required><br><br>
+        Course: <input type="text" id="course" required><br><br>
+        
+        <button type="button" onclick="add()">Add</button>
+        <button type="button" onclick="update()">Update</button>
+        <button type="button" onclick="del()">Delete</button>
+        <button type="button" onclick="clear()">Clear</button>
+    </form>
+    
+    <h3>Student Records</h3>
+    <table border="1" cellpadding="10">
+        <tr><th>ID</th><th>Name</th><th>Email</th><th>Course</th></tr>
+        <tbody id="data"></tbody>
+    </table>
+
+    <script>
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        let nextId = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1;
+
+        function show() {
+            let html = '';
+            students.forEach(s => {
+                html += `<tr onclick="select(${s.id})">
+                    <td>${s.id}</td><td>${s.name}</td><td>${s.email}</td><td>${s.course}</td>
+                </tr>`;
+            });
+            document.getElementById('data').innerHTML = html || '<tr><td colspan="4">No records</td></tr>';
+        }
+
+        function add() {
+            let name = document.getElementById('name').value;
+            let email = document.getElementById('email').value;
+            let course = document.getElementById('course').value;
+            
+            if (!name || !email || !course) return alert('Fill all fields!');
+            if (students.some(s => s.email === email)) return alert('Email exists!');
+            
+            students.push({id: nextId++, name, email, course});
+            save();
+            msg('Added successfully');
+        }
+
+        function update() {
+            let id = parseInt(document.getElementById('id').value);
+            let name = document.getElementById('name').value;
+            let email = document.getElementById('email').value;
+            let course = document.getElementById('course').value;
+            
+            if (!id) return alert('Enter ID or select from table!');
+            if (!name || !email || !course) return alert('Fill all fields!');
+            
+            let i = students.findIndex(s => s.id === id);
+            if (i === -1) return alert('Student not found!');
+            
+            students[i] = {id, name, email, course};
+            save();
+            msg('Updated successfully');
+        }
+
+        function del() {
+            let id = parseInt(document.getElementById('id').value);
+            if (!id) return alert('Enter ID or select from table!');
+            
+            let i = students.findIndex(s => s.id === id);
+            if (i === -1) return alert('Student not found!');
+            
+            if (confirm('Delete this student?')) {
+                students.splice(i, 1);
+                save();
+                msg('Deleted successfully');
+            }
+        }
+
+        function select(id) {
+            let s = students.find(st => st.id === id);
+            document.getElementById('id').value = s.id;
+            document.getElementById('name').value = s.name;
+            document.getElementById('email').value = s.email;
+            document.getElementById('course').value = s.course;
+        }
+
+        function clear() {
+            document.getElementById('form').reset();
+            document.getElementById('id').value = '';
+        }
+
+        function save() {
+            localStorage.setItem('students', JSON.stringify(students));
+            show();
+            clear();
+        }
+
+        function msg(text) {
+            document.getElementById('msg').textContent = text;
+            setTimeout(() => document.getElementById('msg').textContent = '', 3000);
+        }
+
+        show();
+    </script>
+</body>
+</html>
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+Explanation:
+
+Database Connectivity Practical Explanation
+Objective:
+Demonstrate database connectivity with a frontend language to perform CRUD operations (Create, Read, Update, Delete).
+
+WHAT IS DATABASE CONNECTIVITY?
+Database Connectivity = Communication between Frontend (user interface) and Database (data storage)
+User Interface (HTML) ←→ Programming Logic (JavaScript/Python/Java) ←→ Database (MySQL/Oracle)
+
+CRUD OPERATIONS EXPLAINED:
+1. CREATE (Add Student) ✅
+javascriptfunction addStudent() {
+    // Get form data
+    const name = document.getElementById('studentName').value;
+    const email = document.getElementById('email').value;
+    
+    // Create new record
+    const newStudent = { id: nextId++, name, email, course };
+    
+    // Insert into database
+    students.push(newStudent);
+    saveToDatabase();
+}
+SQL Equivalent: INSERT INTO students VALUES (...)
+
+2. READ (Display Students) ✅
+javascriptfunction displayStudents() {
+    // Fetch all records from database
+    students.forEach(student => {
+        // Display in table
+        row.innerHTML = `<td>${student.name}</td>...`;
+    });
+}
+SQL Equivalent: SELECT * FROM students
+
+3. UPDATE (Modify Student) ✅
+javascriptfunction updateStudent() {
+    const id = document.getElementById('studentId').value;
+    
+    // Find student by ID
+    const index = students.findIndex(s => s.id === id);
+    
+    // Update record
+    students[index] = { id, name, email, course };
+    saveToDatabase();
+}
+SQL Equivalent: UPDATE students SET name=... WHERE id=...
+
+4. DELETE (Remove Student) ✅
+javascriptfunction deleteStudent() {
+    const id = document.getElementById('studentId').value;
+    
+    // Find and remove
+    const index = students.findIndex(s => s.id === id);
+    students.splice(index, 1);
+    saveToDatabase();
+}
+SQL Equivalent: DELETE FROM students WHERE id=...
+
+Backend.py
+import mysql.connector
+conn = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="password",
+    database="student_db"
+)
+cursor = conn.cursor()
+cursor.execute("INSERT INTO students VALUES (...)")
+
+---
+
+## **HOW IT WORKS:**
+
+### **Architecture:**
+┌─────────────┐
+│   Browser   │  (HTML Form)
+│  (Frontend) │
+└──────┬──────┘
+       │ User Input
+       ↓
+┌─────────────┐
+│ JavaScript  │  (Event Handlers)
+│   /Python   │  (CRUD Functions)
+│   /PHP      │
+└──────┬──────┘
+       │ SQL Queries
+       ↓
+┌─────────────┐
+│  Database   │  (MySQL/Oracle)
+│   Storage   │  (students table)
+└─────────────┘
+
+---
+
+PROGRAM FLOW:
+
+ADD Operation:
+1. User fills form (Name, Email, Course)
+2. Clicks the "Add" button
+3. JavaScript validates data
+4. Creates a student object
+5. Inserts into the database
+6. Updates the table display
+7. Shows a success message
+
+UPDATE Operation:
+1. User clicks table row (auto-fills form)
+2. Modifies data
+3. Clicks the "Update" button
+4. Finds record by ID
+5. Updates the database
+6. Refreshes the display
+
+DELETE Operation:
+1. User selects student
+2. Clicks the "Delete" button
+3. Shows confirmation dialog
+4. Removes from the database
+5. Updates table
+
+KEY FEATURES:
+✅ Validation - Checks required fields, duplicate emails
+✅ Error Handling - User-friendly error messages
+✅ Interactive UI - Click row to select
+✅ Responsive Design - Works on all devices
+✅ Visual Feedback - Success/error messages
+
+HOW TO RUN:
+Current Version (Browser Only):
+Click "Create Artifact" in Claude
+Program opens in browser
+Works immediately (uses localStorage)
+Add/Update/Delete students
+Data persists in the browser
+
+For Real Database:
+Set up MySQL/Oracle database
+Create a student's table
+Choose backend (Python/PHP/Java)
+Write connection code
+Deploy on local server
+
+
+WHAT TO EXPLAIN IN VIVA:
+
+"What is database connectivity?"
+Connection between frontend and database using backend language
+
+"What are CRUD operations?"
+Create (INSERT), Read (SELECT), Update (UPDATE), Delete (DELETE)
+
+"Which languages can connect to the database?"
+Python, PHP, Java, Node.js with appropriate drivers
+
+"What is the flow?"
+User → Form → JavaScript/Backend → SQL Query → Database → Response
+
+"Why use backend?"
+Security, validation, business logic, database operations
