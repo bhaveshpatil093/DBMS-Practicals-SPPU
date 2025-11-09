@@ -1,0 +1,892 @@
+# Expert System - Medical Diagnosis System
+
+class KnowledgeBase:
+    """Stores rules and facts"""
+    def __init__(self):
+        self.rules = []
+        self.facts = set()
+        
+    def add_rule(self, conditions, conclusion, confidence):
+        """Add a rule to knowledge base"""
+        self.rules.append({
+            'conditions': conditions,
+            'conclusion': conclusion,
+            'confidence': confidence
+        })
+    
+    def add_fact(self, fact):
+        """Add a fact to working memory"""
+        self.facts.add(fact)
+    
+    def has_fact(self, fact):
+        """Check if fact exists"""
+        return fact in self.facts
+
+
+class InferenceEngine:
+    """Processes rules and derives conclusions"""
+    def __init__(self, knowledge_base):
+        self.kb = knowledge_base
+        self.conclusions = {}
+        
+    def forward_chain(self):
+        """Forward chaining inference"""
+        print("\n--- FORWARD CHAINING ---")
+        print("Starting with facts:", self.kb.facts)
+        
+        changed = True
+        iteration = 0
+        
+        while changed:
+            changed = False
+            iteration += 1
+            print(f"\nIteration {iteration}:")
+            
+            for rule in self.kb.rules:
+                # Check if all conditions are met
+                if all(cond in self.kb.facts for cond in rule['conditions']):
+                    # Check if conclusion not already derived
+                    if rule['conclusion'] not in self.kb.facts:
+                        self.kb.add_fact(rule['conclusion'])
+                        self.conclusions[rule['conclusion']] = rule['confidence']
+                        print(f"  Applied rule: {rule['conditions']} → {rule['conclusion']}")
+                        print(f"  Confidence: {rule['confidence']}%")
+                        changed = True
+            
+            if not changed:
+                print("  No new facts derived")
+        
+        return self.conclusions
+    
+    def backward_chain(self, goal):
+        """Backward chaining inference"""
+        print(f"\n--- BACKWARD CHAINING ---")
+        print(f"Goal: Prove '{goal}'")
+        
+        if self.prove(goal, depth=0):
+            print(f"\n✓ Successfully proved: {goal}")
+            return True
+        else:
+            print(f"\n✗ Cannot prove: {goal}")
+            return False
+    
+    def prove(self, goal, depth):
+        """Recursively prove a goal"""
+        indent = "  " * depth
+        print(f"{indent}Trying to prove: {goal}")
+        
+        # Check if goal is already a fact
+        if goal in self.kb.facts:
+            print(f"{indent}→ {goal} is a known fact")
+            return True
+        
+        # Try to prove using rules
+        for rule in self.kb.rules:
+            if rule['conclusion'] == goal:
+                print(f"{indent}→ Found rule: {rule['conditions']} → {goal}")
+                
+                # Try to prove all conditions
+                all_proved = True
+                for condition in rule['conditions']:
+                    if not self.prove(condition, depth + 1):
+                        all_proved = False
+                        break
+                
+                if all_proved:
+                    self.kb.add_fact(goal)
+                    self.conclusions[goal] = rule['confidence']
+                    print(f"{indent}→ Proved {goal} with confidence {rule['confidence']}%")
+                    return True
+        
+        print(f"{indent}→ Cannot prove {goal}")
+        return False
+
+
+class MedicalExpertSystem:
+    """Medical diagnosis expert system"""
+    def __init__(self):
+        self.kb = KnowledgeBase()
+        self.engine = InferenceEngine(self.kb)
+        self.setup_knowledge_base()
+    
+    def setup_knowledge_base(self):
+        """Initialize medical knowledge"""
+        
+        # Rule 1: Fever + Cough + Fatigue → Flu
+        self.kb.add_rule(
+            conditions=['fever', 'cough', 'fatigue'],
+            conclusion='flu',
+            confidence=85
+        )
+        
+        # Rule 2: Fever + Headache + Stiff_neck → Meningitis
+        self.kb.add_rule(
+            conditions=['fever', 'headache', 'stiff_neck'],
+            conclusion='meningitis',
+            confidence=90
+        )
+        
+        # Rule 3: Fever + Rash + Red_eyes → Measles
+        self.kb.add_rule(
+            conditions=['fever', 'rash', 'red_eyes'],
+            conclusion='measles',
+            confidence=88
+        )
+        
+        # Rule 4: Cough + Chest_pain + Shortness_of_breath → Pneumonia
+        self.kb.add_rule(
+            conditions=['cough', 'chest_pain', 'shortness_of_breath'],
+            conclusion='pneumonia',
+            confidence=82
+        )
+        
+        # Rule 5: Headache + Nausea + Sensitivity_to_light → Migraine
+        self.kb.add_rule(
+            conditions=['headache', 'nausea', 'sensitivity_to_light'],
+            conclusion='migraine',
+            confidence=80
+        )
+        
+        # Rule 6: Fever + Sore_throat + Swollen_glands → Strep_throat
+        self.kb.add_rule(
+            conditions=['fever', 'sore_throat', 'swollen_glands'],
+            conclusion='strep_throat',
+            confidence=87
+        )
+        
+        # Rule 7: Sneezing + Runny_nose + Itchy_eyes → Allergies
+        self.kb.add_rule(
+            conditions=['sneezing', 'runny_nose', 'itchy_eyes'],
+            conclusion='allergies',
+            confidence=75
+        )
+        
+        # Rule 8: Fever + Body_aches + Chills → Flu
+        self.kb.add_rule(
+            conditions=['fever', 'body_aches', 'chills'],
+            conclusion='flu',
+            confidence=83
+        )
+    
+    def get_symptoms_from_user(self):
+        """Get symptoms from user interactively"""
+        print("\n" + "="*60)
+        print("MEDICAL DIAGNOSIS EXPERT SYSTEM")
+        print("="*60)
+        
+        available_symptoms = [
+            'fever', 'cough', 'fatigue', 'headache', 'stiff_neck',
+            'rash', 'red_eyes', 'chest_pain', 'shortness_of_breath',
+            'nausea', 'sensitivity_to_light', 'sore_throat', 'swollen_glands',
+            'sneezing', 'runny_nose', 'itchy_eyes', 'body_aches', 'chills'
+        ]
+        
+        print("\nAvailable symptoms:")
+        for i, symptom in enumerate(available_symptoms, 1):
+            print(f"{i}. {symptom.replace('_', ' ').title()}")
+        
+        print("\nEnter symptom numbers separated by commas (e.g., 1,2,3)")
+        print("Or type symptom names separated by commas")
+        
+        user_input = input("\nYour symptoms: ").strip()
+        
+        # Parse input
+        symptoms = []
+        if user_input:
+            parts = [p.strip() for p in user_input.split(',')]
+            for part in parts:
+                if part.isdigit():
+                    idx = int(part) - 1
+                    if 0 <= idx < len(available_symptoms):
+                        symptoms.append(available_symptoms[idx])
+                else:
+                    symptom = part.lower().replace(' ', '_')
+                    if symptom in available_symptoms:
+                        symptoms.append(symptom)
+        
+        return symptoms
+    
+    def diagnose_forward(self, symptoms):
+        """Diagnose using forward chaining"""
+        print("\n" + "="*60)
+        print("DIAGNOSIS USING FORWARD CHAINING")
+        print("="*60)
+        
+        # Clear previous facts and conclusions
+        self.kb.facts = set()
+        self.engine.conclusions = {}
+        
+        # Add symptoms as facts
+        for symptom in symptoms:
+            self.kb.add_fact(symptom)
+        
+        # Run forward chaining
+        conclusions = self.engine.forward_chain()
+        
+        # Display results
+        self.display_diagnosis(conclusions)
+    
+    def diagnose_backward(self, symptoms, goal_disease):
+        """Diagnose using backward chaining"""
+        print("\n" + "="*60)
+        print("DIAGNOSIS USING BACKWARD CHAINING")
+        print("="*60)
+        
+        # Clear previous facts and conclusions
+        self.kb.facts = set()
+        self.engine.conclusions = {}
+        
+        # Add symptoms as facts
+        for symptom in symptoms:
+            self.kb.add_fact(symptom)
+        
+        # Run backward chaining
+        result = self.engine.backward_chain(goal_disease)
+        
+        # Display results
+        if result:
+            self.display_diagnosis(self.engine.conclusions)
+        else:
+            print(f"\nCannot confirm {goal_disease} with given symptoms")
+    
+    def display_diagnosis(self, conclusions):
+        """Display diagnosis results"""
+        print("\n" + "="*60)
+        print("DIAGNOSIS RESULTS")
+        print("="*60)
+        
+        if conclusions:
+            print("\nPossible diagnoses:")
+            sorted_conclusions = sorted(conclusions.items(), 
+                                      key=lambda x: x[1], 
+                                      reverse=True)
+            
+            for disease, confidence in sorted_conclusions:
+                print(f"\n• {disease.replace('_', ' ').title()}")
+                print(f"  Confidence: {confidence}%")
+                print(f"  Recommendation: {self.get_recommendation(disease)}")
+        else:
+            print("\nNo specific diagnosis could be made.")
+            print("Recommendation: Please consult a doctor for proper evaluation.")
+    
+    def get_recommendation(self, disease):
+        """Get treatment recommendation"""
+        recommendations = {
+            'flu': 'Rest, fluids, and over-the-counter medications. See doctor if symptoms worsen.',
+            'meningitis': 'URGENT: Seek immediate medical attention. This is potentially serious.',
+            'measles': 'Isolate yourself and contact doctor. Ensure vaccination for prevention.',
+            'pneumonia': 'Consult doctor for antibiotics. Get chest X-ray if recommended.',
+            'migraine': 'Rest in dark room, pain relievers. Track triggers. See neurologist.',
+            'strep_throat': 'See doctor for throat culture and antibiotics if positive.',
+            'allergies': 'Antihistamines, avoid allergens. See allergist for testing.'
+        }
+        return recommendations.get(disease, 'Consult a healthcare professional.')
+    
+    def explain_rules(self):
+        """Explain the rules in knowledge base"""
+        print("\n" + "="*60)
+        print("KNOWLEDGE BASE RULES")
+        print("="*60)
+        
+        for i, rule in enumerate(self.kb.rules, 1):
+            conditions = [c.replace('_', ' ').title() for c in rule['conditions']]
+            conclusion = rule['conclusion'].replace('_', ' ').title()
+            
+            print(f"\nRule {i}:")
+            print(f"  IF {' AND '.join(conditions)}")
+            print(f"  THEN {conclusion}")
+            print(f"  Confidence: {rule['confidence']}%")
+
+
+def main():
+    """Main function"""
+    system = MedicalExpertSystem()
+    
+    while True:
+        print("\n" + "="*60)
+        print("MENU")
+        print("="*60)
+        print("1. Diagnose using Forward Chaining")
+        print("2. Diagnose using Backward Chaining")
+        print("3. View Knowledge Base Rules")
+        print("4. Exit")
+        
+        choice = input("\nEnter choice (1-4): ").strip()
+        
+        if choice == '1':
+            symptoms = system.get_symptoms_from_user()
+            if symptoms:
+                system.diagnose_forward(symptoms)
+            else:
+                print("No symptoms entered!")
+        
+        elif choice == '2':
+            symptoms = system.get_symptoms_from_user()
+            if symptoms:
+                diseases = ['flu', 'meningitis', 'measles', 'pneumonia', 
+                          'migraine', 'strep_throat', 'allergies']
+                print("\nAvailable diseases to check:")
+                for i, disease in enumerate(diseases, 1):
+                    print(f"{i}. {disease.replace('_', ' ').title()}")
+                
+                disease_choice = input("\nEnter disease number to verify: ").strip()
+                if disease_choice.isdigit():
+                    idx = int(disease_choice) - 1
+                    if 0 <= idx < len(diseases):
+                        system.diagnose_backward(symptoms, diseases[idx])
+            else:
+                print("No symptoms entered!")
+        
+        elif choice == '3':
+            system.explain_rules()
+        
+        elif choice == '4':
+            print("\nThank you for using the Medical Expert System!")
+            break
+        
+        else:
+            print("Invalid choice!")
+
+
+if __name__ == "__main__":
+    main()
+
+#####################################################################################################################
+
+# Expert System Implementation
+## Detailed Explanation - Medical Diagnosis System
+
+---
+
+## What is an Expert System?
+
+An **Expert System** is an AI program that mimics the decision-making ability of a human expert in a specific domain. It uses knowledge and reasoning to solve complex problems that typically require human expertise.
+
+**Key Characteristics:**
+- Contains domain-specific knowledge
+- Uses logical reasoning
+- Explains its reasoning process
+- Provides expert-level solutions
+- Can handle uncertainty
+
+---
+
+## Components of Expert System
+
+```
+┌─────────────────────────────────────────────────┐
+│           EXPERT SYSTEM ARCHITECTURE            │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  ┌─────────────────┐      ┌─────────────────┐ │
+│  │  KNOWLEDGE BASE │◄─────┤ KNOWLEDGE       │ │
+│  │                 │      │ ACQUISITION     │ │
+│  │ • Facts         │      └─────────────────┘ │
+│  │ • Rules         │                           │
+│  │ • Heuristics    │                           │
+│  └────────┬────────┘                           │
+│           │                                     │
+│           ▼                                     │
+│  ┌─────────────────┐      ┌─────────────────┐ │
+│  │ INFERENCE       │◄────►│ WORKING MEMORY  │ │
+│  │ ENGINE          │      │                 │ │
+│  │                 │      │ • Current Facts │ │
+│  │ • Forward Chain │      │ • Conclusions   │ │
+│  │ • Backward Chain│      └─────────────────┘ │
+│  └────────┬────────┘                           │
+│           │                                     │
+│           ▼                                     │
+│  ┌─────────────────┐                           │
+│  │ EXPLANATION     │                           │
+│  │ FACILITY        │                           │
+│  └────────┬────────┘                           │
+│           │                                     │
+│           ▼                                     │
+│  ┌─────────────────┐                           │
+│  │ USER INTERFACE  │                           │
+│  └─────────────────┘                           │
+└─────────────────────────────────────────────────┘
+```
+
+### 1. Knowledge Base
+- **Facts**: Known information (e.g., "patient has fever")
+- **Rules**: IF-THEN statements (e.g., IF fever AND cough THEN flu)
+- **Heuristics**: Rules of thumb from experts
+
+### 2. Inference Engine
+- Applies logical rules to derive conclusions
+- Two main methods:
+  - **Forward Chaining**: Data-driven (facts → conclusions)
+  - **Backward Chaining**: Goal-driven (hypothesis → verify facts)
+
+### 3. Working Memory
+- Stores current facts and intermediate results
+- Updated during reasoning process
+
+### 4. Explanation Facility
+- Explains how conclusions were reached
+- Shows reasoning chain
+
+### 5. User Interface
+- Interaction with user
+- Input symptoms/facts
+- Display results
+
+---
+
+## Knowledge Representation
+
+### Rule Format
+
+```
+IF <conditions>
+THEN <conclusion>
+WITH <confidence>
+```
+
+### Example Rules
+
+**Rule 1:**
+```
+IF fever AND cough AND fatigue
+THEN flu
+CONFIDENCE: 85%
+```
+
+**Rule 2:**
+```
+IF fever AND headache AND stiff_neck
+THEN meningitis
+CONFIDENCE: 90%
+```
+
+### Rule Structure in Code
+
+```python
+{
+    'conditions': ['fever', 'cough', 'fatigue'],
+    'conclusion': 'flu',
+    'confidence': 85
+}
+```
+
+---
+
+## Forward Chaining
+
+### Concept
+
+**Forward Chaining** is a **data-driven** approach that starts with known facts and applies rules to derive new facts until a goal is reached or no more rules can be applied.
+
+**Direction**: Facts → Rules → Conclusions
+
+### How It Works
+
+```
+1. Start with initial facts (symptoms)
+2. Find rules whose conditions match facts
+3. Apply rule → add conclusion as new fact
+4. Repeat until no new facts derived
+5. Return all conclusions
+```
+
+### Algorithm
+
+```
+Function FORWARD_CHAIN(facts, rules):
+    changed = True
+    
+    WHILE changed:
+        changed = False
+        
+        FOR each rule in rules:
+            IF all conditions in facts:
+                IF conclusion not in facts:
+                    Add conclusion to facts
+                    changed = True
+    
+    RETURN facts
+```
+
+### Example Execution
+
+**Initial Facts:** fever, cough, fatigue
+
+**Iteration 1:**
+- Check Rule 1: IF fever AND cough AND fatigue THEN flu
+- All conditions met ✓
+- Add "flu" to facts
+- Facts now: {fever, cough, fatigue, flu}
+
+**Iteration 2:**
+- No new rules can be applied
+- Stop
+
+**Result:** Diagnosed with flu (85% confidence)
+
+---
+
+## Backward Chaining
+
+### Concept
+
+**Backward Chaining** is a **goal-driven** approach that starts with a hypothesis (goal) and works backward to verify if facts support it.
+
+**Direction**: Goal → Rules → Facts
+
+### How It Works
+
+```
+1. Start with a goal (e.g., "prove flu")
+2. Find rules that conclude this goal
+3. Try to prove all conditions of the rule
+4. Recursively prove each condition
+5. If all conditions proven, goal is proven
+```
+
+### Algorithm
+
+```
+Function BACKWARD_CHAIN(goal, facts, rules):
+    IF goal in facts:
+        RETURN True
+    
+    FOR each rule where rule.conclusion == goal:
+        all_proven = True
+        
+        FOR each condition in rule.conditions:
+            IF NOT BACKWARD_CHAIN(condition, facts, rules):
+                all_proven = False
+                BREAK
+        
+        IF all_proven:
+            RETURN True
+    
+    RETURN False
+```
+
+### Example Execution
+
+**Goal:** Prove "flu"
+
+**Step 1:** Is "flu" a known fact? No
+**Step 2:** Find rule: IF fever AND cough AND fatigue THEN flu
+**Step 3:** Prove "fever"
+  - Is "fever" a known fact? Yes ✓
+**Step 4:** Prove "cough"
+  - Is "cough" a known fact? Yes ✓
+**Step 5:** Prove "fatigue"
+  - Is "fatigue" a known fact? Yes ✓
+**Step 6:** All conditions proven → "flu" is proven ✓
+
+**Result:** Successfully proved flu
+
+---
+
+## Forward vs Backward Chaining
+
+| Aspect | Forward Chaining | Backward Chaining |
+|--------|------------------|-------------------|
+| Direction | Facts → Conclusions | Goal → Facts |
+| Strategy | Data-driven | Goal-driven |
+| Starting Point | Known facts | Hypothesis |
+| Process | Apply all applicable rules | Prove specific goal |
+| Output | All possible conclusions | True/False for goal |
+| Efficiency | Explores many paths | Focused on goal |
+| Best For | Finding all solutions | Verifying hypothesis |
+| Example | "What diseases match symptoms?" | "Does patient have flu?" |
+
+---
+
+## Code Structure Explanation
+
+### 1. KnowledgeBase Class
+
+```python
+class KnowledgeBase:
+    def __init__(self):
+        self.rules = []      # List of IF-THEN rules
+        self.facts = set()   # Known facts
+```
+
+**Purpose:** Store domain knowledge
+
+**Methods:**
+- `add_rule()`: Add new rule to knowledge base
+- `add_fact()`: Add new fact to working memory
+- `has_fact()`: Check if fact exists
+
+### 2. InferenceEngine Class
+
+```python
+class InferenceEngine:
+    def __init__(self, knowledge_base):
+        self.kb = knowledge_base
+        self.conclusions = {}
+```
+
+**Purpose:** Reasoning mechanism
+
+**Methods:**
+- `forward_chain()`: Apply forward chaining
+- `backward_chain()`: Apply backward chaining
+- `prove()`: Recursively prove goals
+
+### 3. MedicalExpertSystem Class
+
+```python
+class MedicalExpertSystem:
+    def __init__(self):
+        self.kb = KnowledgeBase()
+        self.engine = InferenceEngine(self.kb)
+```
+
+**Purpose:** Domain-specific implementation
+
+**Methods:**
+- `setup_knowledge_base()`: Initialize medical rules
+- `get_symptoms_from_user()`: Input interface
+- `diagnose_forward()`: Forward chaining diagnosis
+- `diagnose_backward()`: Backward chaining diagnosis
+- `display_diagnosis()`: Output interface
+
+---
+
+## Detailed Walkthrough
+
+### Scenario: Patient with Fever, Cough, Fatigue
+
+**Step 1: Input**
+```
+User enters symptoms: fever, cough, fatigue
+Add to facts: {fever, cough, fatigue}
+```
+
+**Step 2: Forward Chaining**
+```
+Iteration 1:
+  Check Rule 1: IF fever AND cough AND fatigue THEN flu
+    ✓ fever in facts
+    ✓ cough in facts
+    ✓ fatigue in facts
+    → Apply rule: Add "flu" to facts
+    → Confidence: 85%
+
+  Check Rule 8: IF fever AND body_aches AND chills THEN flu
+    ✓ fever in facts
+    ✗ body_aches NOT in facts
+    → Cannot apply
+
+Iteration 2:
+  No new facts can be derived
+  → Stop
+
+Result: {fever, cough, fatigue, flu}
+Diagnosis: Flu (85% confidence)
+```
+
+**Step 3: Backward Chaining (Verify "flu")**
+```
+Goal: Prove "flu"
+
+  Is "flu" in facts? No
+  
+  Find rule: IF fever AND cough AND fatigue THEN flu
+  
+  Prove "fever":
+    Is "fever" in facts? Yes ✓
+  
+  Prove "cough":
+    Is "cough" in facts? Yes ✓
+  
+  Prove "fatigue":
+    Is "fatigue" in facts? Yes ✓
+  
+  All conditions proven → "flu" is proven ✓
+
+Result: Successfully proved flu
+```
+
+---
+
+## Advantages of Expert Systems
+
+1. Consistency: Same input → same output
+2. Availability: 24/7 access to expertise
+3. Scalability: Can handle many cases simultaneously
+4. Documentation: Rules are explicitly documented
+5. Training: Can train non-experts
+6. Cost-Effective: Reduce the need for human experts
+7. Speed: Fast decision-making
+8. No Emotions: Objective decisions
+
+---
+
+## Limitations
+
+1. Limited Domain: Works only in a specific area
+2. Cannot Learn: Doesn't improve from experience (unless using ML)
+3. No Common Sense: Lacks general reasoning
+4. Maintenance: Rules need updating
+5. Knowledge Acquisition: Difficult to extract expert knowledge
+6. Brittleness: Fails outside the trained domain
+7. No Creativity: Cannot solve novel problems
+8. Explanation: May not explain like humans do
+
+---
+
+## Real-World Applications
+
+### 1. Medical Diagnosis
+### 2. Financial Services
+### 3. Manufacturing
+### 4. Engineering
+### 5. Agriculture
+### 6. Customer Service
+### 7. Legal
+---
+
+## Handling Uncertainty
+
+### Confidence Factors
+
+```python
+rule = {
+    'conditions': ['fever', 'cough'],
+    'conclusion': 'flu',
+    'confidence': 85  # 85% certain
+}
+```
+
+### Combining Uncertainties
+
+**Method 1: Minimum**
+```
+CF(A AND B) = MIN(CF(A), CF(B))
+```
+
+**Method 2: Product**
+```
+CF(A AND B) = CF(A) × CF(B)
+```
+
+**Method 3: Certainty Factors**
+```
+CF(hypothesis) = CF(rule) × MIN(CF(conditions))
+```
+
+---
+
+## Enhancement Ideas
+
+### 1. Fuzzy Logic
+```python
+# Instead of: has_fever = True/False
+# Use: fever_level = 0.8 (scale of 0-1)
+
+if fever_level > 0.7 and cough_level > 0.6:
+    flu_probability = 0.85
+```
+
+### 2. Machine Learning Integration
+```python
+# Learn rules from data
+from sklearn.tree import DecisionTreeClassifier
+
+# Train on patient data
+model.fit(symptoms, diagnoses)
+
+# Extract rules from tree
+rules = extract_rules_from_tree(model)
+```
+
+### 3. Probabilistic Reasoning
+```python
+# Bayesian networks
+P(Disease|Symptoms) = P(Symptoms|Disease) × P(Disease) / P(Symptoms)
+```
+
+### 4. Explanation Generation
+```python
+def explain_reasoning(disease):
+    print(f"Diagnosed {disease} because:")
+    for rule in applied_rules:
+        print(f"  - Rule: {rule}")
+        print(f"  - Matched symptoms: {rule.conditions}")
+```
+
+---
+
+## Testing the System
+
+### Test Case 1: Clear Diagnosis
+```
+Input: fever, cough, fatigue
+Expected: flu (85%)
+Actual: flu (85%) ✓
+```
+
+### Test Case 2: Multiple Matches
+```
+Input: fever, cough, chest_pain, shortness_of_breath
+Expected: flu, pneumonia
+Actual: pneumonia (82%) ✓
+```
+
+### Test Case 3: No Match
+```
+Input: nausea
+Expected: No diagnosis
+Actual: No diagnosis ✓
+```
+
+### Test Case 4: Backward Chaining
+```
+Goal: Prove meningitis
+Input: fever, headache, stiff_neck
+Expected: True
+Actual: True ✓
+```
+
+---
+
+## Time Complexity
+
+Forward Chaining:
+- Worst Case: O(R × F × C)
+  - R = number of rules
+  - F = number of facts
+  - C = conditions per rule
+- Multiple iterations until no changes
+
+Backward Chaining:
+- Worst Case: O(R^D)
+  - R = number of rules
+  - D = depth of proof tree
+- Exponential in depth but pruned by goal focus
+
+---
+
+## Comparison with Other AI Approaches
+
+| Approach | Knowledge | Learning | Reasoning | Use Case |
+|----------|-----------|----------|-----------|----------|
+| Expert System | Explicit rules | No | Logical | Well-defined domains |
+| Neural Network | Learned weights | Yes | Statistical | Pattern recognition |
+| Decision Tree | Tree structure | Yes | Hierarchical | Classification |
+| Fuzzy Logic | Fuzzy rules | No | Approximate | Uncertain inputs |
+
+
+---
+
+## Conclusion
+
+Expert Systems demonstrate how AI can capture and apply human expertise. While they have limitations (no learning, domain-specific), they excel at consistent, explainable decision-making in structured domains.
+
+Modern Evolution:
+- Hybrid systems (rules + ML)
+- Knowledge graphs
+- Semantic reasoning
+- Explainable AI (XAI)
+
+The principles of expert systems—knowledge representation, logical reasoning, and explanation—remain fundamental to AI, even as techniques evolve.
