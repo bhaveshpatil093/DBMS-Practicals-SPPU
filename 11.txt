@@ -1,0 +1,515 @@
+# Elementary Chatbot - Restaurant Order System
+
+import re
+import random
+
+class RestaurantChatbot:
+    def __init__(self):
+        self.menu = {
+            'pizza': {'price': 299, 'category': 'main'},
+            'burger': {'price': 149, 'category': 'main'},
+            'pasta': {'price': 199, 'category': 'main'},
+            'sandwich': {'price': 99, 'category': 'main'},
+            'fries': {'price': 79, 'category': 'side'},
+            'salad': {'price': 89, 'category': 'side'},
+            'coke': {'price': 49, 'category': 'drink'},
+            'juice': {'price': 59, 'category': 'drink'},
+            'water': {'price': 20, 'category': 'drink'}
+        }
+        
+        self.order = {}
+        self.customer_name = None
+        self.state = 'greeting'
+        
+    def get_response(self, user_input):
+        """Main function to generate bot response"""
+        user_input = user_input.lower().strip()
+        
+        # Exit condition
+        if user_input in ['bye', 'exit', 'quit', 'goodbye']:
+            return "Thank you for visiting! Have a great day!"
+        
+        # State-based responses
+        if self.state == 'greeting':
+            return self.handle_greeting(user_input)
+        
+        elif self.state == 'taking_order':
+            return self.handle_order(user_input)
+        
+        elif self.state == 'order_complete':
+            return self.handle_completion(user_input)
+        
+        return "I didn't understand that. Can you please rephrase?"
+    
+    def handle_greeting(self, user_input):
+        """Handle initial greeting"""
+        greetings = ['hi', 'hello', 'hey', 'good morning', 'good evening']
+        
+        if any(greet in user_input for greet in greetings):
+            self.state = 'taking_order'
+            return ("Hello! Welcome to QuickBite Restaurant. 🍕\n"
+                    "I'm your ordering assistant.\n"
+                    "Here's our menu:\n" + self.show_menu() + 
+                    "\nWhat would you like to order?")
+        
+        elif 'menu' in user_input:
+            self.state = 'taking_order'
+            return self.show_menu() + "\nWhat would you like to order?"
+        
+        else:
+            return ("Hello! Welcome to QuickBite Restaurant.\n"
+                    "Say 'hi' or 'menu' to get started!")
+    
+    def handle_order(self, user_input):
+        """Handle order taking"""
+        
+        # Show menu
+        if 'menu' in user_input or 'show' in user_input:
+            return self.show_menu()
+        
+        # Add item to order
+        if 'add' in user_input or 'order' in user_input or 'want' in user_input or 'get' in user_input:
+            return self.add_to_order(user_input)
+        
+        # Check if item name mentioned directly
+        for item in self.menu.keys():
+            if item in user_input:
+                return self.add_to_order(user_input)
+        
+        # Remove item
+        if 'remove' in user_input or 'delete' in user_input:
+            return self.remove_from_order(user_input)
+        
+        # View current order
+        if 'my order' in user_input or 'current order' in user_input or 'cart' in user_input:
+            return self.show_order()
+        
+        # Complete order
+        if 'done' in user_input or 'complete' in user_input or 'finish' in user_input or 'checkout' in user_input:
+            self.state = 'order_complete'
+            return self.show_order() + "\nPlease confirm (yes/no):"
+        
+        return ("I can help you:\n"
+                "- Add items: 'add pizza' or 'I want burger'\n"
+                "- Remove items: 'remove fries'\n"
+                "- View order: 'my order'\n"
+                "- Complete: 'done'\n"
+                "What would you like?")
+    
+    def handle_completion(self, user_input):
+        """Handle order completion"""
+        
+        if 'yes' in user_input or 'confirm' in user_input:
+            total = sum(self.menu[item]['price'] * qty for item, qty in self.order.items())
+            response = (f"✅ Order confirmed!\n"
+                       f"Total: ₹{total}\n"
+                       f"Your order will be ready in 20-30 minutes.\n"
+                       f"Thank you for ordering from QuickBite!")
+            self.reset()
+            return response
+        
+        elif 'no' in user_input or 'cancel' in user_input:
+            self.state = 'taking_order'
+            return "No problem! What would you like to change?"
+        
+        return "Please confirm your order (yes/no):"
+    
+    def add_to_order(self, user_input):
+        """Add item to order"""
+        for item in self.menu.keys():
+            if item in user_input:
+                # Extract quantity
+                quantity = self.extract_number(user_input)
+                if quantity == 0:
+                    quantity = 1
+                
+                if item in self.order:
+                    self.order[item] += quantity
+                else:
+                    self.order[item] = quantity
+                
+                return (f"Added {quantity} x {item.title()} (₹{self.menu[item]['price']}) to your order.\n"
+                       f"Say 'done' when finished or add more items!")
+        
+        return "Sorry, that item is not on our menu. Please check the menu."
+    
+    def remove_from_order(self, user_input):
+        """Remove item from order"""
+        for item in self.menu.keys():
+            if item in user_input:
+                if item in self.order:
+                    del self.order[item]
+                    return f"Removed {item.title()} from your order."
+                else:
+                    return f"{item.title()} is not in your order."
+        return "Please specify which item to remove."
+    
+    def show_menu(self):
+        """Display menu"""
+        menu_text = "\n📋 MENU:\n"
+        menu_text += "━━━━━━━━━━━━━━━━━━━━\n"
+        
+        categories = {'main': 'Main Dishes', 'side': 'Sides', 'drink': 'Drinks'}
+        
+        for cat_key, cat_name in categories.items():
+            menu_text += f"\n{cat_name}:\n"
+            for item, details in self.menu.items():
+                if details['category'] == cat_key:
+                    menu_text += f"  • {item.title()}: ₹{details['price']}\n"
+        
+        return menu_text
+    
+    def show_order(self):
+        """Display current order"""
+        if not self.order:
+            return "Your order is empty. Add some items!"
+        
+        order_text = "\n🛒 YOUR ORDER:\n"
+        order_text += "━━━━━━━━━━━━━━━━━━━━\n"
+        total = 0
+        
+        for item, qty in self.order.items():
+            price = self.menu[item]['price']
+            subtotal = price * qty
+            total += subtotal
+            order_text += f"{qty} x {item.title()}: ₹{subtotal}\n"
+        
+        order_text += "━━━━━━━━━━━━━━━━━━━━\n"
+        order_text += f"TOTAL: ₹{total}\n"
+        
+        return order_text
+    
+    def extract_number(self, text):
+        """Extract number from text"""
+        numbers = re.findall(r'\d+', text)
+        if numbers:
+            return int(numbers[0])
+        return 0
+    
+    def reset(self):
+        """Reset chatbot state"""
+        self.order = {}
+        self.state = 'greeting'
+
+
+def main():
+    """Main function to run chatbot"""
+    bot = RestaurantChatbot()
+    
+    print("=" * 50)
+    print("  QUICKBITE RESTAURANT CHATBOT")
+    print("=" * 50)
+    print("\nType 'bye' to exit\n")
+    print(bot.get_response(""))
+    
+    while True:
+        user_input = input("\nYou: ").strip()
+        
+        if not user_input:
+            continue
+        
+        response = bot.get_response(user_input)
+        print(f"\nBot: {response}")
+        
+        if user_input.lower() in ['bye', 'exit', 'quit', 'goodbye']:
+            break
+
+
+if __name__ == "__main__":
+    main()
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# Elementary Chatbot Development
+## Detailed Explanation - Restaurant Order System
+
+---
+
+## What is a Chatbot?
+
+A chatbot is a computer program designed to simulate human conversation through text or voice interactions. It uses Natural Language Processing (NLP) and predefined rules to understand user input and provide appropriate responses.
+
+Types of Chatbots:
+1. Rule-based: Follow predefined rules and patterns (our implementation)
+2. AI-based: Use machine learning and NLP
+3. Hybrid: Combination of both
+
+---
+
+## Our Application: Restaurant Order Chatbot
+
+Purpose: Help customers order food from a restaurant menu
+
+Features:
+- Display menu
+- Take orders
+- Add/remove items
+- Calculate total
+- Confirm orders
+- Handle basic queries
+
+---
+
+## Architecture & Components
+
+### 1. Chatbot Class Structure
+
+```
+RestaurantChatbot
+├── __init__()          → Initialize menu, order, state
+├── get_response()      → Main entry point
+├── handle_greeting()   → Welcome user
+├── handle_order()      → Process order commands
+├── handle_completion() → Confirm/cancel order
+├── add_to_order()      → Add items
+├── remove_from_order() → Remove items
+├── show_menu()         → Display menu
+├── show_order()        → Display current order
+└── extract_number()    → Parse quantities
+```
+
+### 2. Data Structures
+
+**Menu Dictionary:**
+```python
+{
+    'pizza': {'price': 299, 'category': 'main'},
+    'burger': {'price': 149, 'category': 'main'},
+    ...
+}
+```
+
+**Order Dictionary:**
+```python
+{
+    'pizza': 2,    # item: quantity
+    'coke': 1
+}
+```
+
+**State Variable:**
+- 'greeting': Initial welcome
+- 'taking_order': Order process
+- 'order_complete': Confirmation stage
+
+---
+
+## How the Chatbot Works
+
+### Step-by-Step Flow
+
+```
+┌─────────────────┐
+│   User Input    │
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│ Normalize Text  │ (lowercase, strip)
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│  Check State    │ (greeting/taking_order/complete)
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│ Pattern Matching│ (keywords: add, remove, menu, etc.)
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│ Process Request │ (update order, show menu, etc.)
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│ Generate Reply  │
+└────────┬────────┘
+         ↓
+┌─────────────────┐
+│  Update State   │
+└─────────────────┘
+```
+
+### State Management
+
+**State 1: Greeting**
+- User says: "Hi" or "Hello"
+- Bot responds: Welcome message + menu
+- Transition to: 'taking_order'
+
+**State 2: Taking Order**
+- User says: "add pizza", "I want burger"
+- Bot responds: Item added confirmation
+- Stay in: 'taking_order'
+- Commands: add, remove, show order, done
+
+**State 3: Order Complete**
+- User says: "done" or "checkout"
+- Bot responds: Order summary + confirmation
+- User confirms: "yes" → Process order, reset state
+- User cancels: "no" → Back to 'taking_order'
+
+---
+
+## Key Techniques Used
+
+### 1. Pattern Matching
+### 2. Intent Recognition
+### 3. Entity Extraction
+### 4. Context Management
+
+## Code Walkthrough
+
+### Example Conversation Flow
+
+```
+USER: "Hi"
+  ↓
+BOT checks state: 'greeting'
+BOT matches: greeting pattern
+  ↓
+BOT: Shows welcome + menu
+BOT updates state: 'taking_order'
+
+USER: "add 2 pizzas"
+  ↓
+BOT checks state: 'taking_order'
+BOT matches: 'add' keyword
+BOT extracts: item='pizza', quantity=2
+  ↓
+BOT updates: order['pizza'] = 2
+BOT: "Added 2 x Pizza"
+
+USER: "done"
+  ↓
+BOT matches: 'done' keyword
+BOT updates state: 'order_complete'
+  ↓
+BOT: Shows order summary + "Confirm?"
+
+USER: "yes"
+  ↓
+BOT processes order
+BOT calculates total
+BOT resets state
+  ↓
+BOT: "Order confirmed! Total: ₹598"
+```
+
+---
+
+## Core Functions Explained
+
+### 1. get_response()
+### 2. handle_order()
+### 3. add_to_order()
+
+---
+
+## Advantages of This Implementation
+
+1. Simple & Understandable: Rule-based, easy to debug
+2. Fast Response: No AI processing overhead
+3. Predictable: Consistent behavior
+4. Easy to Extend: Add more items/rules easily
+5. No Training Required: Works immediately
+6. Lightweight: Minimal dependencies
+
+---
+
+## Limitations
+
+1. Limited Understanding: Can't handle complex queries
+2. No Learning: Doesn't improve from interactions
+3. Rigid Patterns: Must match predefined keywords
+4. No Context Beyond Session: Forgets after restart
+5. Can't Handle Typos: Spelling mistakes break functionality
+6. No Natural Conversation: Feels scripted
+
+---
+
+## Possible Enhancements
+
+### 1. Better NLP
+### 2. Database Integration
+### 3. Multiple Language Support
+### 4. Order History
+### 5. Recommendations
+
+---
+
+## Testing the Chatbot
+
+### Test Cases
+
+**Test 1: Basic Greeting**
+```
+Input: "hi"
+Expected: Welcome message + menu
+```
+
+**Test 2: Add Single Item**
+```
+Input: "add pizza"
+Expected: "Added 1 x Pizza"
+Order: {'pizza': 1}
+```
+
+**Test 3: Add Multiple Items**
+```
+Input: "add 3 burgers"
+Expected: "Added 3 x Burger"
+Order: {'burger': 3}
+```
+
+**Test 4: Remove Item**
+```
+Input: "remove pizza"
+Expected: "Removed Pizza"
+Order: {}
+```
+
+**Test 5: Complete Order**
+```
+Input: "done"
+Expected: Order summary + confirmation
+State: 'order_complete'
+```
+
+**Test 6: Invalid Item**
+```
+Input: "add biryani"
+Expected: "Not on menu"
+```
+
+---
+
+## Real-World Applications
+
+### 1. Customer Support
+### 2. E-commerce
+### 3. Banking
+### 4. Healthcare
+### 5. Education
+
+## Algorithm Complexity
+
+Time Complexity:
+- get_response(): O(1)
+- Pattern matching: O(n) where n = number of keywords
+- Menu search: O(m) where m = menu items
+- Overall: O(n + m) per query
+
+Space Complexity:
+- Menu storage: O(m)
+- Order storage: O(k) where k = items in order
+- Overall: O(m + k)
+
+---
+
+## Conclusion
+
+This elementary chatbot demonstrates fundamental conversational AI concepts:
+- Intent recognition through keyword matching
+- State-based conversation flow
+- Entity extraction from user input
+- Context management within the session
+- Structured response generation
