@@ -1,0 +1,361 @@
+// ============================================
+// MongoDB PRACTICAL: STUDENT MANAGEMENT SYSTEM
+// Demonstrates: CRUD, SAVE, Logical Operators
+// ============================================
+
+// Switch to database
+use student_db
+
+// ============================================
+// CREATE OPERATIONS (INSERT)
+// ============================================
+
+// QUERY 1: insertOne() - Insert single document
+db.students.insertOne({
+    _id: 1,
+    name: "Alice Johnson",
+    age: 20,
+    grade: "A",
+    marks: 85,
+    subjects: ["Math", "Physics", "Chemistry"],
+    address: { city: "Mumbai", state: "Maharashtra" }
+})
+
+// QUERY 2: insertMany() - Insert multiple documents
+db.students.insertMany([
+    {
+        _id: 2,
+        name: "Bob Smith",
+        age: 22,
+        grade: "B",
+        marks: 75,
+        subjects: ["Math", "Biology"],
+        address: { city: "Delhi", state: "Delhi" }
+    },
+    {
+        _id: 3,
+        name: "Carol White",
+        age: 21,
+        grade: "A",
+        marks: 90,
+        subjects: ["Physics", "Chemistry", "Math"],
+        address: { city: "Pune", state: "Maharashtra" }
+    },
+    {
+        _id: 4,
+        name: "David Brown",
+        age: 23,
+        grade: "C",
+        marks: 60,
+        subjects: ["Biology", "Chemistry"],
+        address: { city: "Mumbai", state: "Maharashtra" }
+    },
+    {
+        _id: 5,
+        name: "Emma Davis",
+        age: 20,
+        grade: "B",
+        marks: 78,
+        subjects: ["Math", "Physics"],
+        address: { city: "Bangalore", state: "Karnataka" }
+    }
+])
+
+// ============================================
+// READ OPERATIONS (FIND)
+// ============================================
+
+// QUERY 3: find() - Retrieve all documents
+db.students.find()
+
+// QUERY 4: find() with condition - Filter by grade
+db.students.find({ grade: "A" })
+
+// QUERY 5: find() with projection - Show only name and marks
+db.students.find({}, { name: 1, marks: 1, _id: 0 })
+
+// QUERY 6: findOne() - Get single document
+db.students.findOne({ name: "Bob Smith" })
+
+// QUERY 7: Comparison Operators ($gt, $lt, $gte, $lte)
+// Find students with marks greater than 80
+db.students.find({ marks: { $gt: 80 } })
+
+// Students with marks between 70 and 85
+db.students.find({ marks: { $gte: 70, $lte: 85 } })
+
+// ============================================
+// LOGICAL OPERATORS
+// ============================================
+
+// QUERY 8: $and - Multiple conditions (both must be true)
+db.students.find({
+    $and: [
+        { marks: { $gte: 75 } },
+        { age: { $lte: 21 } }
+    ]
+})
+
+// QUERY 9: $or - At least one condition true
+db.students.find({
+    $or: [
+        { grade: "A" },
+        { marks: { $gte: 85 } }
+    ]
+})
+
+// QUERY 10: $not - Negation
+db.students.find({ marks: { $not: { $lt: 70 } } })
+
+// QUERY 11: $nor - Neither condition is true
+db.students.find({
+    $nor: [
+        { grade: "C" },
+        { age: { $lt: 20 } }
+    ]
+})
+
+// QUERY 12: $in - Value in array
+db.students.find({ grade: { $in: ["A", "B"] } })
+
+// QUERY 13: $nin - Value not in array
+db.students.find({ age: { $nin: [20, 23] } })
+
+// ============================================
+// QUERY ON ARRAYS AND NESTED DOCUMENTS
+// ============================================
+
+// QUERY 14: Query array field
+db.students.find({ subjects: "Physics" })
+
+// QUERY 15: Query nested document
+db.students.find({ "address.city": "Mumbai" })
+
+// ============================================
+// UPDATE OPERATIONS
+// ============================================
+
+// QUERY 16: updateOne() - Update single document
+db.students.updateOne(
+    { name: "Alice Johnson" },
+    { $set: { marks: 88, grade: "A+" } }
+)
+
+// QUERY 17: updateMany() - Update multiple documents
+db.students.updateMany(
+    { grade: "B" },
+    { $set: { status: "Good" } }
+)
+
+// QUERY 18: $inc - Increment field value
+db.students.updateOne(
+    { _id: 2 },
+    { $inc: { marks: 5 } }
+)
+
+// QUERY 19: $push - Add to array
+db.students.updateOne(
+    { _id: 4 },
+    { $push: { subjects: "Math" } }
+)
+
+// QUERY 20: $pull - Remove from array
+db.students.updateOne(
+    { _id: 3 },
+    { $pull: { subjects: "Chemistry" } }
+)
+
+// QUERY 21: $unset - Remove field
+db.students.updateMany(
+    {},
+    { $unset: { status: "" } }
+)
+
+// ============================================
+// SAVE METHOD
+// ============================================
+
+// QUERY 22: save() - Insert if not exists, Update if exists
+db.students.save({
+    _id: 6,
+    name: "Frank Miller",
+    age: 22,
+    grade: "B",
+    marks: 72,
+    subjects: ["Math", "Biology"],
+    address: { city: "Chennai", state: "Tamil Nadu" }
+})
+
+// Update existing document using save
+db.students.save({
+    _id: 6,
+    name: "Frank Miller",
+    age: 22,
+    grade: "A",
+    marks: 82,
+    subjects: ["Math", "Biology", "Physics"],
+    address: { city: "Chennai", state: "Tamil Nadu" }
+})
+
+// ============================================
+// DELETE OPERATIONS
+// ============================================
+
+// QUERY 23: deleteOne() - Delete single document
+db.students.deleteOne({ _id: 6 })
+
+// QUERY 24: deleteMany() - Delete multiple documents
+db.students.deleteMany({ marks: { $lt: 65 } })
+
+// ============================================
+// ADDITIONAL USEFUL OPERATIONS
+// ============================================
+
+// QUERY 25: count() - Count documents
+db.students.countDocuments({ grade: "A" })
+
+// QUERY 26: sort() - Sort results
+db.students.find().sort({ marks: -1 })
+
+// QUERY 27: limit() - Limit results
+db.students.find().limit(3)
+
+// QUERY 28: skip() - Skip documents
+db.students.find().skip(2).limit(2)
+
+// QUERY 29: distinct() - Get unique values
+db.students.distinct("grade")
+
+// QUERY 30: aggregate() - Complex operations
+db.students.aggregate([
+    { $match: { marks: { $gte: 70 } } },
+    { $group: { _id: "$grade", avgMarks: { $avg: "$marks" } } }
+])
+
+// ============================================
+// COMPLEX QUERIES WITH MULTIPLE OPERATORS
+// ============================================
+
+// QUERY 31: Combined operators
+db.students.find({
+    $and: [
+        { $or: [{ grade: "A" }, { grade: "B" }] },
+        { marks: { $gte: 75 } },
+        { "address.state": "Maharashtra" }
+    ]
+})
+
+// QUERY 32: replaceOne() - Replace entire document
+db.students.replaceOne(
+    { _id: 5 },
+    {
+        name: "Emma Davis",
+        age: 21,
+        grade: "A",
+        marks: 88,
+        subjects: ["Math", "Physics", "Chemistry"],
+        address: { city: "Bangalore", state: "Karnataka" }
+    }
+)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Explanation:
+
+MongoDB Practical Explanation - CRUD Operations
+Database: Student Management System
+Collection: students (stores student documents with nested fields and arrays)
+
+CRUD OPERATIONS EXPLAINED:
+1. CREATE (INSERT) - Queries 1-2
+insertOne() - Adds single document
+javascriptdb.students.insertOne({ name: "Alice", age: 20 })
+insertMany() - Adds multiple documents at once
+javascriptdb.students.insertMany([{...}, {...}])
+
+2. READ (FIND) - Queries 3-15
+find() - Retrieves all/filtered documents
+javascriptdb.students.find({ grade: "A" })
+findOne() - Returns first matching document
+Projection - Select specific fields
+javascriptfind({}, { name: 1, marks: 1, _id: 0 })
+// 1 = include, 0 = exclude
+Comparison Operators:
+
+$gt - Greater than
+$lt - Less than
+$gte - Greater than or equal
+$lte - Less than or equal
+$eq - Equal
+$ne - Not equal
+
+
+3. LOGICAL OPERATORS - Queries 8-13
+Operator Meaning                Example
+$and     All conditions true    marks ≥ 75 AND age ≤ 21
+$or      At least one true      grade = "A" OR marks ≥ 85
+$not     Negation               NOT (marks < 70)
+$nor     None are true          Neither grade "C" nor age < 20
+$in      Value in list          grade in ["A", "B"]
+$nin     Value not in list      age not in [20, 23]
+
+4. UPDATE OPERATIONS - Queries 16-21
+updateOne() - Updates the first matching document
+updateMany() - Updates all matching documents
+Update Operators:
+
+$set - Set field value
+$inc - Increment numeric value
+$push - Add to array
+$pull - Remove from array
+$unset - Remove field
+
+javascript$inc: { marks: 5 }        // Add 5 to marks
+$push: { subjects: "Math" } // Add Math to subjects array
+
+5. SAVE METHOD - Query 22
+save() is special:
+
+If _id exists → UPDATE the document
+If _id doesn't exist → INSERT new document
+
+javascriptdb.students.save({ _id: 6, name: "Frank" })
+// First time: Inserts new document
+// Second time: Updates existing document
+
+6. DELETE OPERATIONS - Queries 23-24
+deleteOne() - Removes the first matching document
+deleteMany() - Removes all matching documents
+javascriptdeleteMany({ marks: { $lt: 65 } }) // Delete all with marks < 65
+
+ADDITIONAL OPERATIONS - Queries 25-30
+Utility Methods:
+
+count() - Count matching documents
+sort() - Order results (1 = ascending, -1 = descending)
+limit() - Restrict number of results
+skip() - Skip documents (pagination)
+distinct() - Get unique values
+aggregate() - Complex data processing
+
+
+KEY MONGODB CONCEPTS:
+1. Documents - JSON-like data (BSON format)
+javascript{ _id: 1, name: "Alice", age: 20 }
+2. Collections - Group of documents (like SQL table)
+3. No Schema - Flexible structure (documents can vary)
+4. Nested Documents
+javascriptaddress: { city: "Mumbai", state: "Maharashtra" }
+5. Arrays
+javascriptsubjects: ["Math", "Physics", "Chemistry"]
+
+SQL vs MongoDB:
+SQL            MongoDB
+Database       Database
+Table          Collection
+Row            Document
+Column         Field
+INSERT         insertOne/insertMany
+SELECT         find/findOne
+UPDATE         updateOne/updateMany
+DELETE         deleteOne/deleteMany
