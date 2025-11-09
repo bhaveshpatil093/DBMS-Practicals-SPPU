@@ -1,0 +1,189 @@
+Program:
+
+-- ============================================
+-- PL/SQL PRACTICAL: SIMPLE BANKING SYSTEM
+-- Demonstrates: Control Structures & Exception Handling
+-- ============================================
+
+-- CREATE TABLE
+CREATE TABLE Accounts (
+    account_id NUMBER PRIMARY KEY,
+    account_holder VARCHAR2(50),
+    balance NUMBER(10,2)
+);
+
+-- INSERT SAMPLE DATA
+INSERT INTO Accounts VALUES (101, 'Alice Johnson', 50000);
+INSERT INTO Accounts VALUES (102, 'Bob Smith', 25000);
+INSERT INTO Accounts VALUES (103, 'Carol White', 8000);
+COMMIT;
+
+-- Enable output
+SET SERVEROUTPUT ON;
+
+-- ============================================
+-- UNNAMED PL/SQL BLOCK
+-- Money Withdrawal with Validation
+-- ============================================
+DECLARE
+    -- Variable declarations
+    v_account_id NUMBER := 102;
+    v_balance NUMBER;
+    v_withdraw_amount NUMBER := 10000;
+    v_min_balance NUMBER := 5000;
+    
+    -- Custom exception
+    insufficient_funds EXCEPTION;
+    
+BEGIN
+    -- Fetch current balance
+    SELECT balance INTO v_balance 
+    FROM Accounts 
+    WHERE account_id = v_account_id;
+    
+    DBMS_OUTPUT.PUT_LINE('=== Withdrawal Process ===');
+    DBMS_OUTPUT.PUT_LINE('Account ID: ' || v_account_id);
+    DBMS_OUTPUT.PUT_LINE('Current Balance: ' || v_balance);
+    DBMS_OUTPUT.PUT_LINE('Withdrawal Amount: ' || v_withdraw_amount);
+    
+    -- IF-THEN-ELSE Control Structure
+    IF v_balance >= (v_withdraw_amount + v_min_balance) THEN
+        -- Sufficient balance
+        v_balance := v_balance - v_withdraw_amount;
+        
+        UPDATE Accounts 
+        SET balance = v_balance 
+        WHERE account_id = v_account_id;
+        
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Status: SUCCESS');
+        DBMS_OUTPUT.PUT_LINE('New Balance: ' || v_balance);
+        
+    ELSIF v_balance >= v_withdraw_amount THEN
+        -- Can withdraw but violates minimum balance
+        RAISE insufficient_funds;
+        
+    ELSE
+        -- Cannot withdraw - not enough money
+        DBMS_OUTPUT.PUT_LINE('Status: FAILED');
+        DBMS_OUTPUT.PUT_LINE('Reason: Insufficient balance');
+    END IF;
+    
+-- Exception Handling
+EXCEPTION
+    WHEN insufficient_funds THEN
+        DBMS_OUTPUT.PUT_LINE('Status: FAILED');
+        DBMS_OUTPUT.PUT_LINE('Reason: Minimum balance of ' || 
+                           v_min_balance || ' must be maintained');
+        ROLLBACK;
+        
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Status: FAILED');
+        DBMS_OUTPUT.PUT_LINE('Reason: Account not found');
+        
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Status: FAILED');
+        DBMS_OUTPUT.PUT_LINE('Reason: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Explanation:
+
+PL/SQL Practical Explanation - Money Withdrawal System
+Objective:
+Demonstrate IF-THEN-ELSE control structure and Exception Handling in a single unnamed PL/SQL block.
+
+Scenario:
+Withdraw money from bank account with validation rules:
+
+Minimum balance of ₹5,000 must be maintained
+Account must exist
+Sufficient funds required
+
+
+CONTROL STRUCTURES USED:
+IF-THEN-ELSIF-ELSE
+sqlIF condition1 THEN
+    -- statements
+ELSIF condition2 THEN
+    -- statements
+ELSE
+    -- statements
+END IF;
+
+Three scenarios handled:
+✅ Enough balance → Process withdrawal
+⚠️ Violates minimum balance → Raise exception
+❌ Insufficient funds → Show error message
+
+
+EXCEPTION HANDLING:
+1. User-Defined Exception:
+DECLARE
+    insufficient_funds EXCEPTION;  -- Declare
+BEGIN
+    IF condition THEN
+        RAISE insufficient_funds;   -- Raise
+    END IF;
+EXCEPTION
+    WHEN insufficient_funds THEN   -- Handle
+        -- Error message
+END;
+
+2. Predefined Exceptions:
+- NO_DATA_FOUND - Triggered when the account doesn't exist
+- OTHERS - Catches any unexpected error
+
+---
+
+PL/SQL BLOCK STRUCTURE:
+DECLARE
+    ├── Variables (v_account_id, v_balance)
+    └── Custom Exception (insufficient_funds)
+
+BEGIN
+    ├── SELECT (fetch balance)
+    ├── IF-THEN-ELSE (validation logic)
+    ├── UPDATE (deduct amount)
+    └── COMMIT (save changes)
+
+EXCEPTION
+    ├── insufficient_funds
+    ├── NO_DATA_FOUND
+    └── OTHERS
+
+---
+
+KEY CONCEPTS:
+
+| Concept | Purpose | Example |
+|---------|---------|---------|
+| Variables | Store data | v_balance NUMBER |
+| %TYPE | Inherit column type | balance%TYPE |
+| DBMS_OUTPUT | Print messages | PUT_LINE('...') |
+| COMMIT | Save changes | After successful update |
+| ROLLBACK | Undo changes | In exception handler |
+| SQLERRM | Get error message | Error:  || SQLERRM |
+
+---
+
+EXECUTION OUTPUT:
+
+Scenario 1: Successful withdrawal (Balance ≥ 15000)
+=== Withdrawal Process ===
+Current Balance: 25000
+Withdrawal Amount: 10000
+Status: SUCCESS
+New Balance: 15000
+
+
+Scenario 2: Minimum balance violation (Balance = 14000)
+Status: FAILED
+Reason: Minimum balance of 5000 must be maintained
+
+Scenario 3: Account not found
+Status: FAILED
+Reason: Account not found
