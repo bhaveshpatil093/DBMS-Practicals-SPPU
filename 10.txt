@@ -1,0 +1,280 @@
+# Greedy Search Algorithm
+## Detailed Explanation
+
+---
+
+## What is Greedy Search?
+
+Greedy Search (also called Greedy Best-First Search) is an informed search algorithm that uses a heuristic function to guide its search toward the goal. At each step, it expands the node that appears to be closest to the goal, based on the heuristic estimate.
+
+Key Principle: Make the locally optimal choice at each step, hoping to find a global optimum.
+
+---
+
+## Heuristic Function
+
+A heuristic function h(n) estimates the cost from node n to the goal.
+
+Properties:
+- h(goal) = 0 (at goal, distance is zero)
+- h(n) ≥ 0 for all nodes
+- Should be easy to compute
+- Guides search toward promising directions
+
+Common heuristics:
+- Straight-line distance (Euclidean distance)
+- Manhattan distance (grid-based problems)
+- Number of misplaced tiles (puzzle problems)
+
+---
+
+## How Greedy Search Works
+
+### Algorithm Steps
+
+1. Initialize: Start with the initial node in the open list (priority queue)
+2. Select: Choose node with **minimum heuristic value** h(n)
+3. Goal Check: If the current node is a goal, return the path
+4. Expand: Generate all neighbors of the current node
+5. Evaluate: Calculate heuristic for each neighbor
+6. Add to Queue: Insert neighbors into priority queue by h(n)
+7. Repeat: Go to step 2 until the goal is found or the queue is empty
+
+### Pseudocode
+
+```
+Function GREEDY_SEARCH(start, goal):
+    open_list = priority_queue()
+    open_list.add(start, h(start))
+    visited = set()
+    
+    WHILE open_list is not empty:
+        current = open_list.pop_min()  // Node with min h(n)
+        
+        IF current == goal:
+            RETURN path
+        
+        IF current in visited:
+            CONTINUE
+        
+        visited.add(current)
+        
+        FOR each neighbor of current:
+            IF neighbor not in visited:
+                open_list.add(neighbor, h(neighbor))
+    
+    RETURN failure
+```
+
+---
+
+## Key Characteristics
+
+### 1. Informed Search
+- Uses domain knowledge (heuristic)
+- More efficient than blind search (BFS, DFS)
+- Guided toward a goal
+
+### 2. Greedy Selection
+- Always picks the node with the best (lowest) heuristic
+- May ignore actual path cost
+- Focus on "promising" nodes
+
+### 3. Not Optimal
+- Does NOT guarantee the shortest path
+- Can get trapped by misleading heuristics
+- Path cost is not considered, only heuristic
+
+### 4. Not Complete
+- May fail to find a solution if stuck in a dead end
+- Can enter infinite loops in graphs with cycles
+- Complete only in finite spaces with cycle detection
+
+---
+
+## Example Walkthrough
+
+### Graph Setup
+```
+       A (h=7)
+      / \
+     B   C (h=4)
+    (h=6)\
+    / \   F (h=1)
+   D   E   \
+  (h=3)(h=3) G (goal, h=0)
+```
+
+### Execution Steps
+
+**Step 1**: Start at A (h=7)
+- Open list: [A]
+- Expand A → Add B(h=6), C(h=4)
+
+**Step 2**: Select C (lowest h=4)
+- Open list: [B(h=6), C(h=4)]
+- Expand C → Add F(h=1)
+
+**Step 3**: Select F (lowest h=1)
+- Open list: [B(h=6), F(h=1)]
+- Expand F → Add G(h=0)
+
+**Step 4**: Select G (h=0)
+- Goal reached!
+- Path: A → C → F → G
+
+Note: Greedy chose path based on heuristic, not actual cost. Path A→B→D→G might be shorter in actual distance, but greedy doesn't check.
+
+---
+
+## Comparison with Other Algorithms
+
+| Algorithm | Uses Heuristic? | Considers Path Cost? | Optimal? | Complete? |
+|-----------|----------------|---------------------|----------|-----------|
+| BFS | No | Yes (uniform) | Yes* | Yes |
+| DFS | No | No | No | No |
+| Greedy | Yes | No | No | No** |
+| A* | Yes | Yes | Yes*** | Yes |
+
+\* Optimal for unweighted graphs  
+\*\* Complete with cycle detection  
+\*\*\* When heuristic is admissible
+
+---
+
+## Time and Space Complexity
+
+Time Complexity: O(b^m)
+- b = branching factor
+- m = maximum depth
+- Worst case explores the entire tree
+
+Space Complexity: O(b^m)
+- Must store all generated nodes in memory
+- Priority queue grows exponentially
+
+In Practice: Much better than the worst case when the heuristic is good
+
+---
+
+## Advantages
+
+1. Fast: Often finds solutions quickly with good heuristics
+2. Simple: Easy to implement and understand
+3. Memory Efficient**: Compared to A*, stores less information
+4. Guided: More efficient than uninformed search
+5. Flexible: Works with any heuristic function
+
+---
+
+## Disadvantages
+
+1. Not Optimal: May find suboptimal paths
+2. Can Get Stuck: Misleading heuristics cause poor performance
+3. Not Complete: May fail in infinite spaces
+4. Ignores Cost: Only looks at heuristic, not actual path cost
+5. Heuristic Dependent: Performance varies greatly with heuristic quality
+
+---
+
+## When to Use Greedy Search
+
+### Good For:
+- Problems where solution speed > solution quality
+- Good heuristic available
+- Finding "good enough" solutions quickly
+- Resource-constrained environments
+
+### Not Good For:
+- Finding optimal solutions
+- Problems with misleading heuristics
+- Safety-critical applications
+- When path cost matters
+
+---
+
+## Real-World Applications
+
+1. Route Finding: GPS navigation (quick routes)
+2. Puzzle Solving: 8-puzzle, Rubik's cube (fast solutions)
+3. Robot Path Planning: Quick obstacle avoidance
+4. Game AI: Move selection in games
+5. Network Routing: Fast packet routing
+6. Resource Allocation: Quick scheduling decisions
+
+---
+
+## Example: Romania Map Problem
+
+Problem: Travel from Arad to Bucharest
+
+Heuristic: Straight-line distance to Bucharest
+
+Greedy Path: 
+- Arad (h=366) → Sibiu (h=253) → Fagaras (h=176) → Bucharest (h=0)
+- Total cost: 140 + 99 + 211 = **450 km**
+
+Optimal Path:
+- Arad → Sibiu → Rimnicu → Pitesti → Bucharest
+- Total cost: 418 km
+
+Greedy found a solution 32 km longer than optimal because it was "greedy" and only looked at the heuristic, not the actual distance.
+
+---
+
+## Improving Greedy Search
+
+### 1. Better Heuristics
+- More accurate estimates
+- Domain-specific knowledge
+- Learned heuristics
+
+### 2. Use A* Instead
+- Considers both h(n) and g(n)
+- f(n) = g(n) + h(n)
+- Guarantees an optimal solution
+
+### 3. Add Randomization
+- Randomly choose among good options
+- Avoid getting stuck
+- Better exploration
+
+---
+
+## Implementation Tips
+
+1. Use Priority Queue: For efficient min extraction (heapq in Python)
+2. Track Visited: Avoid revisiting nodes
+3. Store Path: Keep track of how we reached each node
+4. Handle Ties: Define a tie-breaking rule when h(n) values are equal
+5. Validate Heuristic: Ensure h(n) is admissible for domain
+
+---
+
+## Key Formulas
+
+Selection Criterion: 
+```
+Select node n where h(n) is minimum
+```
+
+Heuristic Function:
+```
+h(n) = estimated cost from n to goal
+```
+
+Path Cost (not used by greedy):
+```
+g(n) = actual cost from start to n
+```
+
+---
+
+## Conclusion
+
+Greedy Search is a fast, heuristic-driven algorithm that makes locally optimal choices. While it doesn't guarantee the best solution, it's valuable when:
+- Speed matters more than optimality
+- A good heuristic is available
+- "Good enough" solution is acceptable
+
+For optimal solutions, consider A* algorithm, which combines greedy's heuristic guidance with actual path cost consideration.
