@@ -119,55 +119,50 @@ GROUP BY m.name;
 
 */
 
+----------------------------------------------------------------------------------------------------------------------------
+
 Explanation:
 
 I've created a comprehensive SQL practical for you! Here's a **single-page explanation** to help you present this:
 
 ---
 
-## **SQL Practical Explanation - Library Management System**
-
-### **Purpose**
+Purpose
 This practical demonstrates core SQL concepts using a Library Management database with three related tables: Members, Books, and Issued_Books.
+SQL Objects Covered:
+1. SEQUENCE - Auto-generates unique IDs for books and members, eliminating manual ID assignment.
 
-### **SQL Objects Covered:**
+2. TABLES - Three interconnected tables store library data with proper relationships.
 
-**1. SEQUENCE** - Auto-generates unique IDs for books and members, eliminating manual ID assignment.
+3. CONSTRAINTS Demonstrated:
+PRIMARY KEY: Uniquely identifies each record
+FOREIGN KEY: Links Issued_Books to Books and Members (with CASCADE delete)
+NOT NULL: Ensures essential fields have values
+UNIQUE: Prevents duplicate emails
+CHECK: Validates phone length and ensures positive prices/stock
+DEFAULT: Auto-fills dates and initial stock values
 
-**2. TABLES** - Three interconnected tables store library data with proper relationships.
+4. INDEX - Created on frequently searched columns (title, email) to speed up queries.
 
-**3. CONSTRAINTS Demonstrated:**
-   - **PRIMARY KEY**: Uniquely identifies each record
-   - **FOREIGN KEY**: Links Issued_Books to Books and Members (with CASCADE delete)
-   - **NOT NULL**: Ensures essential fields have values
-   - **UNIQUE**: Prevents duplicate emails
-   - **CHECK**: Validates phone length and ensures positive prices/stock
-   - **DEFAULT**: Auto-fills dates and initial stock values
+5. VIEW - Virtual table showing only available books (stock > 0), simplifying queries.
 
-**4. INDEX** - Created on frequently searched columns (title, email) to speed up queries.
+6. SYNONYM - Creates alias "Mems" for Members table, providing shorter notation.
 
-**5. VIEW** - Virtual table showing only available books (stock > 0), simplifying queries.
+10+ DML Queries Explained:
+1-3. INSERT: Add members, books, and track issued books using sequences
+4. SELECT with WHERE: Filter books with sufficient stock
+5. JOIN: Combine three tables to show who borrowed which books
+6-7. UPDATE: Decrease stock when issuing books, record return dates
+8. DELETE: Remove members from the database
+9. Aggregates: Calculate total books and average price
+10. GROUP BY/HAVING: Count books per author
+11. Subquery: Find currently issued books
+12. ORDER BY: Sort books by price
+13-14. View/Synonym usage: Query using created objects
+15. LIKE: Pattern matching for book titles
 
-**6. SYNONYM** - Creates alias "Mems" for Members table, providing shorter notation.
-
-### **10+ DML Queries Explained:**
-
-1-3. **INSERT**: Add members, books, and track issued books using sequences
-4. **SELECT with WHERE**: Filter books with sufficient stock
-5. **JOIN**: Combine three tables to show who borrowed which books
-6-7. **UPDATE**: Decrease stock when issuing books, record return dates
-8. **DELETE**: Remove members from database
-9. **Aggregates**: Calculate total books and average price
-10. **GROUP BY/HAVING**: Count books per author
-11. **Subquery**: Find currently issued books
-12. **ORDER BY**: Sort books by price
-13-14. **View/Synonym usage**: Query using created objects
-15. **LIKE**: Pattern matching for book titles
-
-### **Key Concepts:**
-- **DDL** (Data Definition Language): CREATE, DROP statements
-- **DML** (Data Manipulation Language): INSERT, UPDATE, DELETE, SELECT
-- **Referential Integrity**: Foreign keys maintain data consistency
-- **Data Validation**: Constraints ensure data quality
-
-This system shows real-world database design with proper normalization and relationships!
+Key Concepts:
+DDL (Data Definition Language): CREATE, DROP statements
+DML (Data Manipulation Language): INSERT, UPDATE, DELETE, SELECT
+Referential Integrity: Foreign keys maintain data consistency
+Data Validation: Constraints ensure data quality
