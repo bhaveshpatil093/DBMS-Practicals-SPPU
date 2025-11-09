@@ -1,0 +1,149 @@
+A* Algorithm - Simple Explanation
+Objective:
+Find the shortest path from Start (S) to Goal (G), avoiding obstacles using A search algorithm*.
+
+WHAT IS AN ALGORITHM?
+A* = Best-first search + Heuristic function
+Formula:
+f(n) = g(n) + h(n)
+
+Where:
+f(n) = Total estimated cost
+g(n) = Cost from start to node n
+h(n) = Heuristic (estimated cost from n to goal)
+
+ALGORITHM STEPS:
+1. Start from the initial node
+2. Calculate f(n) = g(n) + h(n) for all neighbors
+3. Choose node with LOWEST f(n)
+4. Repeat until the goal is reached
+5. Reconstruct the path by backtracking
+
+HEURISTIC FUNCTION:
+Manhattan Distance (used in grid-based games):
+javascripth(n) = |x1 - x2| + |y1 - y2|
+
+Example: From (0,0) to (7,5)
+h = |0-7| + |0-5| = 7 + 5 = 12
+
+CORE CODE: (javascript)
+function aStar(start, goal) {
+    openSet = [start];
+    gScore[start] = 0;
+    fScore[start] = heuristic(start, goal);
+    
+    while (openSet is not empty) {
+        current = node in openSet with lowest fScore;
+        
+        if (current == goal)
+            return reconstructPath();
+        
+        for each neighbor of current:
+            tentativeG = gScore[current] + 1;
+            
+            if (tentativeG < gScore[neighbor]):
+                cameFrom[neighbor] = current;
+                gScore[neighbor] = tentativeG;
+                fScore[neighbor] = tentativeG + heuristic(neighbor, goal);
+                add neighbor to openSet;
+    }
+    
+    return null; // No path
+}
+
+---
+
+EXAMPLE WALKTHROUGH:
+Grid:
+
+S . . . # . . .
+. # . . # . # .
+. # . . . . # .
+. . . # . . . .
+# # . # . # # .
+. . . . . . . G
+
+Path Found: S → (1,0) → (2,0) → (3,0) → ... → G
+
+Visual:
+🟦 Blue = Visited nodes
+🟨 Yellow = Final path
+⬛ Black = Walls
+🟩 Green = Start
+🟥 Red = Goal
+
+
+WHY A* IS BEST?
+Algorithm  Guarantees Shortest Path?      Efficient?
+BFS        ✅ Yes                         ❌ Explores too many nodes
+DFS        ❌ No                          ❌ Can get stuck
+Dijkstra   ✅ Yes                         ⚠️ Slower (no heuristic)
+A*         ✅ Yes                         ✅ Fastest (uses heuristic)
+
+COMPLEXITY:
+Time: O(b^d) where b=branching factor, d=depth
+Space: O(b^d)
+With good heuristic: Much faster in practice
+
+
+PYTHON CODE VERSION: (python)
+import heapq
+
+def astar(start, goal, grid):
+    def heuristic(a, b):
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+    
+    openSet = []
+    heapq.heappush(openSet, (0, start))
+    cameFrom = {}
+    gScore = {start: 0}
+    fScore = {start: heuristic(start, goal)}
+    
+    while openSet:
+        current = heapq.heappop(openSet)[1]
+        
+        if current == goal:
+            return reconstruct_path(cameFrom, current)
+        
+        for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+            neighbor = (current[0] + dx, current[1] + dy)
+            
+            if not is_valid(neighbor, grid):
+                continue
+            
+            tentative_g = gScore[current] + 1
+            
+            if neighbor not in gScore or tentative_g < gScore[neighbor]:
+                cameFrom[neighbor] = current
+                gScore[neighbor] = tentative_g
+                fScore[neighbor] = tentative_g + heuristic(neighbor, goal)
+                heapq.heappush(openSet, (fScore[neighbor], neighbor))
+    
+    return None
+
+GAME APPLICATIONS:
+✅ Pac-Man - Ghost pathfinding
+✅ GPS Navigation - Route planning
+✅ Strategy Games - Unit movement
+✅ Puzzle Games - Solving mazes
+✅ Robotics - Path planning
+
+
+VIVA QUESTIONS:
+Q: What is A?*
+A* is a pathfinding algorithm that finds the shortest path using cost + heuristic
+
+Q: What is f(n) = g(n) + h(n)?
+f(n) = total cost, g(n) = actual cost, h(n) = estimated cost
+
+Q: What heuristic is used?
+Manhattan distance: |x1-x2| + |y1-y2|
+
+Q: Why is A* better than Dijkstra?
+A* uses a heuristic to guide search, faster
+
+Q: Is A optimal?*
+Yes, if the heuristic is admissible (never overestimates)
+
+Q: Time complexity?
+O(b^d) worst case, but much faster with a good heuristic
